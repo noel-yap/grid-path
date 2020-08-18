@@ -1,0 +1,48 @@
+plugins {
+  id 'java'
+  id "nebula.facet" version "7.0.9"
+}
+
+sourceCompatibility = JavaVersion.VERSION_14
+targetCompatibility = JavaVersion.VERSION_14
+
+repositories {
+  mavenCentral()
+}
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+dependencyLocking {
+  lockAllConfigurations()
+}
+
+facets {
+    exploratoryTest {
+      parentSourceSet = 'test'
+      includeInCheckLifecycle = false
+    }
+}
+
+dependencies {
+  annotationProcessor 'org.projectlombok:lombok:1.+'
+
+  compileOnly 'org.assertj:assertj-core:1.+'
+  compileOnly 'org.projectlombok:lombok:1.+'
+
+  implementation 'io.vavr:vavr:1.+'
+
+  testImplementation 'org.apache.commons:commons-math3:3.+'
+  testImplementation 'org.assertj:assertj-core:1.+'
+  testImplementation 'org.assertj:assertj-vavr:+'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.+'
+
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.+'
+}
+
+tasks.withType(Test) {
+  useJUnitPlatform()
+}
