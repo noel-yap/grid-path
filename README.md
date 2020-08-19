@@ -1,5 +1,9 @@
 # Grid Path
 
+## Problem
+
+### Problem 1
+
  Write a function that given the follow information:
  - Square grid of size N
  - Initial starting coordinates
@@ -75,10 +79,9 @@
  └───┴───┴───┴───┴───┘
  </pre>
  > Answer: (0, 1)
- --------------------------------------
 
+### Problem 2
 
- --------------------------------------
  Write a function that given a rectangular grid, and a collection of available steps,
  an initial starting coordinate, and a destination coordinate;
 
@@ -111,18 +114,15 @@
  > Possible answer: [U, U, L, L, L, D]
  --------------------------------------
 
- peck@squareup.com
-
-## Overview
+## Solution
 
 Grids keep track of the obstacles.
 Paths keep track of the list of coordinates that have been visited, the directions to get there, and the available steps.
 
-The general strategy is to start at the starting coordinate and try out each available step.
+The general strategy is to start at both the starting and destination coordinates and try out each available step from each direction to find where they may meet.
 Each exploration keeps track of valid paths and which steps are still available.
 If an exploration hits an obstacle or retraces steps, it's pruned out of the exploration space.
-The algorithm records paths leading to the destination and continues to explore all other paths. 
-Once there are no more paths to explore, it returns a complete list of paths leading to the destination.
+The algorithm stops when some solution is found or when it's known no solution exists. 
 
 Path.findDirectionsToDestination is the entry point to the final problem. PathTest.shouldFindDirectionsToDestination verifies the given scenario.
 

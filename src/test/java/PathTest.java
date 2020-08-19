@@ -22,13 +22,13 @@ public class PathTest {
         grid,
         List.of(
             Coordinate.of(0, 1),
-            Coordinate.of(4, 1)
-        ),
+            Coordinate.of(4, 1))
+            .reverse(),
         HashMap.of(
             Direction.DOWN, 1,
             Direction.LEFT, 1,
             Direction.RIGHT, 1),
-        List.of(Direction.UP)
+        List.of(Direction.UP).reverse()
     ));
 
     final Path path = Path
@@ -41,7 +41,7 @@ public class PathTest {
             Direction.RIGHT, 1));
 
     assertThat(path.nextPaths())
-      .isEqualTo(expected);
+        .isEqualTo(expected);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class PathTest {
         .startAt(Coordinate.of(0, 1));
 
     assertThat(path.nextPaths())
-      .isEmpty();
+        .isEmpty();
   }
 
   @Test
@@ -88,7 +88,8 @@ public class PathTest {
             Coordinate.of(3, 1),
             Coordinate.of(3, 2),
             Coordinate.of(3, 3),
-            destination),
+            destination)
+            .reverse(),
         HashMap.of(
             Direction.RIGHT, 1),
         List.of(
@@ -97,6 +98,7 @@ public class PathTest {
             Direction.RIGHT,
             Direction.RIGHT,
             Direction.DOWN)
+            .reverse()
     );
 
     final Path path = Path
@@ -158,7 +160,7 @@ public class PathTest {
             Direction.RIGHT, 2));
 
     assertThat(path.findDirectionsToDestination(destination))
-        .containsExactlyInAnyOrder(
+        .containsAnyOf(
             List.of(
                 Direction.UP,
                 Direction.UP,

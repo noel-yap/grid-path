@@ -5,16 +5,16 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode
 public class Coordinate {
-  public final int x;
-  public final int y;
+  public final byte x;
+  public final byte y;
 
   public static Coordinate of(final int x, final int y) {
     return new Coordinate(x, y);
   }
 
-  private Coordinate(int x, int y) {
-    this.x = x;
-    this.y = y;
+  private Coordinate(final int x, final int y) {
+    this.x = (byte) x;
+    this.y = (byte) y;
   }
 
   @Override

@@ -3,6 +3,7 @@ import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import io.vavr.collection.Stream;
 import io.vavr.control.Option;
 
 /**
@@ -14,10 +15,10 @@ public class Grid {
   private final Set<Coordinate> obstacles;
 
   private static final Map<Direction, Function2<Grid, Coordinate, Coordinate>> directionNextCoordinateMap = HashMap.of(
-      Direction.UP, (g, c) -> Coordinate.of((c.x + g.height - 1) % g.height, c.y),
-      Direction.DOWN, (g, c) -> Coordinate.of((c.x + 1) % g.height, c.y),
-      Direction.LEFT, (g, c) -> Coordinate.of(c.x, (c.y + g.width - 1) % g.width),
-      Direction.RIGHT, (g, c) -> Coordinate.of(c.x, (c.y + 1) % g.width));
+      Direction.UP, (g, c) -> Coordinate.of(((c.x + g.height - 1) % g.height), c.y),
+      Direction.DOWN, (g, c) -> Coordinate.of(((c.x + 1) % g.height), c.y),
+      Direction.LEFT, (g, c) -> Coordinate.of(c.x, ((c.y + g.width - 1) % g.width)),
+      Direction.RIGHT, (g, c) -> Coordinate.of(c.x, ((c.y + 1) % g.width)));
 
   public Grid(
       final int width,
@@ -57,20 +58,6 @@ public class Grid {
   }
 
   /**
-   * Follows list of {@link Direction}s
-   *
-   * @param directions {@link Direction}s to follow
-   * @return Last Coordinate after following directions or just prior to hitting an obstacle
-   */
-  public Coordinate followDirectionsFrom(final Coordinate from, final List<Direction> directions) {
-    return directions
-        .scanLeft(Option.of(from), this::followDirectionFrom)
-        .takeWhile(o -> !o.isEmpty())
-        .last()
-        .get();
-  }
-
-  /**
    * Attempts to follow a {@link Direction} from a {@link Coordinate}
    *
    * @param direction {@link Direction} to follow
@@ -79,11 +66,15 @@ public class Grid {
   public Option<Coordinate> followDirectionFrom(final Option<Coordinate> from, final Direction direction) {
     return from
         .flatMap(f -> {
-          final Coordinate to = directionNextCoordinateMap.get(direction).get().apply(this, f);
+          final Coordinate to = followDirectionFrom(f, direction);
 
           return obstacles.contains(to)
               ? Option.none()
               : Option.of(to);
         });
+  }
+
+  private Coordinate followDirectionFrom(final Coordinate from, final Direction direction) {
+    return directionNextCoordinateMap.get(direction).get().apply(this, from);
   }
 }

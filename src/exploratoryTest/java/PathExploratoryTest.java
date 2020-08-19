@@ -6,11 +6,9 @@ import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.vavr.api.VavrAssertions.assertThat;
-
 public class PathExploratoryTest {
-  public static int WIDTH = 13;
-  public static int HEIGHT = 11;
+  public static int WIDTH = 43;
+  public static int HEIGHT = 41;
 
   public static class RandomInt {
     private final MersenneTwister prng = new MersenneTwister();
@@ -42,7 +40,7 @@ public class PathExploratoryTest {
     final Coordinate start = randomCoordinate();
     final Coordinate destination = randomCoordinate();
 
-    final Set<Coordinate> obstacles = List.fill((int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT), () -> randomCoordinate())
+    final Set<Coordinate> obstacles = List.fill((int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT), this::randomCoordinate)
         .toSet()
         .filter(c -> !c.equals(start) && !c.equals(destination));
     final var grid = new Grid(
@@ -51,10 +49,10 @@ public class PathExploratoryTest {
         obstacles);
 
     final var directionLimits = HashMap.of(
-        Direction.UP, horizontalPrng.produce() * verticalPrng.produce() / 4,
-        Direction.DOWN, horizontalPrng.produce() * verticalPrng.produce() / 4,
-        Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 4,
-        Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 4);
+        Direction.UP, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
+        Direction.DOWN, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
+        Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
+        Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4);
     final var path = Path
         .onGrid(grid)
         .startAt(start)
@@ -67,6 +65,9 @@ public class PathExploratoryTest {
   }
 
   final Coordinate randomCoordinate() {
-    return Coordinate.of(verticalPrng.produce(), horizontalPrng.produce());
+    final int x = verticalPrng.produce();
+    final int y = horizontalPrng.produce();
+
+    return Coordinate.of(x, y);
   }
 }

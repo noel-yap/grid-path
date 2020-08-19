@@ -3,6 +3,8 @@ import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import io.vavr.collection.Stream;
+import io.vavr.control.Option;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,14 +40,10 @@ public class GridTest {
         ));
 
     final var start = Coordinate.of(0, 1);
-    final List<Direction> directions = List.of(
-        Direction.RIGHT,
-        Direction.RIGHT,
-        Direction.DOWN);
 
-    final var destination = grid.followDirectionsFrom(start, directions);
+    final var destination = grid.followDirectionFrom(Option.of(start), Direction.RIGHT);
 
     Assertions.assertThat(destination)
-        .isEqualTo(Coordinate.of(0, 1));
+        .isEmpty();
   }
 }
