@@ -6,9 +6,9 @@ import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class PathExploratoryTest {
-  public static int WIDTH = 43;
-  public static int HEIGHT = 41;
+public class GridExploratoryTest {
+  public static int WIDTH = 61;
+  public static int HEIGHT = 59;
 
   public static class RandomInt {
     private final MersenneTwister prng = new MersenneTwister();
@@ -28,7 +28,7 @@ public class PathExploratoryTest {
   final RandomInt verticalPrng = new RandomInt(HEIGHT);
 
   /*
-   - 11x13 Grid
+   - WIDTH×HEIGHT Grid
    -   Random obstacles
    - Random starting coordinate
    -   Random available steps
@@ -53,15 +53,11 @@ public class PathExploratoryTest {
         Direction.DOWN, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
         Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
         Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4);
-    final var path = Path
-        .onGrid(grid)
-        .startAt(start)
-        .withDirectionLimits(directionLimits);
 
     System.out.println("direction limits = " + directionLimits);
     System.out.println(grid.draw(start, destination));
     System.out.println("===");
-    System.out.println("solutions = " + path.findDirectionsToDestination(destination));
+    System.out.println("solutions = " + grid.findDirections(start, destination, directionLimits));
   }
 
   final Coordinate randomCoordinate() {

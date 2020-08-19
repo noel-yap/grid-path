@@ -124,9 +124,9 @@ Each exploration keeps track of valid paths and which steps are still available.
 If an exploration hits an obstacle or retraces steps, it's pruned out of the exploration space.
 The algorithm stops when some solution is found or when it's known no solution exists. 
 
-Path.findDirectionsToDestination is the entry point to the final problem. PathTest.shouldFindDirectionsToDestination verifies the given scenario.
+Grid.findDirections is the entry point to the final problem. GridTest.shouldFindDirections verifies the given scenario.
 
-PathExploratoryTest.shouldFindDirectionsToDestination exists for manual exploratory testing.
+GridExploratoryTest.shouldFindDirectionsToDestination exists for manual exploratory testing.
 
 ## Running the tests
 
