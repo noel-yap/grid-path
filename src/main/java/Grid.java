@@ -1,6 +1,7 @@
 import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.collection.HashMap;
+import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
@@ -113,7 +114,8 @@ public class Grid {
 
     return explorePaths(
         HashMap.of(source, initialFromSourcePaths),
-        HashMap.of(destination, initialFromDestinationPaths));
+        HashMap.of(destination, initialFromDestinationPaths),
+        HashSet.empty());
   }
 
   /**
@@ -125,12 +127,15 @@ public class Grid {
    */
   private Stream<Path> explorePaths(
       final Map<Coordinate, Stream<Path>> currentFromSource,
-      final Map<Coordinate, Stream<Path>> currentFromDestination) {
-    final Map<Coordinate, Stream<Path>> nextFromSource = nextPaths(currentFromSource);
+      final Map<Coordinate, Stream<Path>> currentFromDestination,
+      final Set<Coordinate> alreadyVisited) {
+    final Map<Coordinate, Stream<Path>> nextFromSource = nextPaths(currentFromSource)
+        .filterNotKeys(alreadyVisited::contains);
     final Map<Coordinate, Stream<Path>> combinedFromSource = currentFromSource // ensure fromSource and fromDestination don't walk passed each other
         .merge(nextFromSource, Stream::appendAll);
 
-    final Map<Coordinate, Stream<Path>> nextFromDestination = nextPaths(currentFromDestination);
+    final Map<Coordinate, Stream<Path>> nextFromDestination = nextPaths(currentFromDestination)
+        .filterNotKeys(alreadyVisited::contains);
     final Map<Coordinate, Stream<Path>> combinedFromDestination = currentFromDestination // ensure fromSource and fromDestination don't walk passed each other
         .merge(nextFromDestination, Stream::appendAll);
 
@@ -154,7 +159,10 @@ public class Grid {
 
     return !nextSolutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()
         ? nextSolutions
-        : explorePaths(nextFromSource, nextFromDestination);
+        : explorePaths(
+            nextFromSource,
+            nextFromDestination,
+            alreadyVisited.addAll(nextFromSource.keySet()).addAll(nextFromDestination.keySet()));
   }
 
   private Map<Coordinate, Stream<Path>> nextPaths(final Map<Coordinate, Stream<Path>> currentPaths) {

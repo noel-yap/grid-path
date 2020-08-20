@@ -121,7 +121,7 @@ Paths keep track of the list of coordinates that have been visited, the directio
 
 The general strategy is to start at both the starting and destination coordinates and try out each available step from each direction to find where they may meet.
 Each exploration keeps track of valid paths and which steps are still available.
-If an exploration hits an obstacle or retraces steps, it's pruned out of the exploration space.
+If an exploration hits an obstacle, retraces steps, or visits an already-visited coordinate, it's pruned out of the exploration space.
 The algorithm stops when some solution is found or when it's known no solution exists. 
 
 Grid.findDirections is the entry point to the final problem. GridTest.shouldFindDirections verifies the given scenario.
@@ -133,5 +133,3 @@ GridExploratoryTest.shouldFindDirectionsToDestination exists for manual explorat
 `./gradlew build`
 
 ## Known issues
-
-Exhausted heap space if the solution space is too large.

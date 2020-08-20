@@ -1,6 +1,7 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
+import io.vavr.collection.Stream;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -9,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
-  public static int WIDTH = 61;
-  public static int HEIGHT = 59;
+  public static int HEIGHT = 4091;
+  public static int WIDTH = HEIGHT + 2;
 
   public static class RandomInt {
     private final MersenneTwister prng = new MersenneTwister();
@@ -45,9 +46,10 @@ public class GridExploratoryTest {
     assertThat(start)
         .isNotEqualTo(destination);
 
-    final Set<Coordinate> obstacles = List.fill((int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT), this::randomCoordinate)
-        .toSet()
-        .filter(c -> !c.equals(start) && !c.equals(destination));
+    final Set<Coordinate> obstacles = Stream.continually(this::randomCoordinate)
+        .take((int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT))
+        .filterNot(c -> c.equals(start) || c.equals(destination))
+        .toSet();
     final var grid = new Grid(
         WIDTH,
         HEIGHT,
@@ -61,8 +63,12 @@ public class GridExploratoryTest {
 
     System.out.println("direction limits = " + directionLimits);
     System.out.println(grid.draw(start, destination));
+
     System.out.println("===");
-    System.out.println("one solution = " + grid.findDirections(start, destination, directionLimits));
+
+    final List<Direction> directions = grid.findDirections(start, destination, directionLimits);
+    System.out.println("one solution = " + directions);
+    System.out.println("number of steps = " + directions.size());
   }
 
   final Coordinate randomCoordinate() {
