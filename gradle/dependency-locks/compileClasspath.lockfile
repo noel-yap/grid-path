@@ -4,3 +4,4 @@
 io.vavr:vavr:1.0.0-alpha-3
 org.assertj:assertj-core:1.7.1
 org.projectlombok:lombok:1.18.12
+org.slf4j:slf4j-api:1.8.0-beta4

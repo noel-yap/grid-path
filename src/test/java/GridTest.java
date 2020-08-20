@@ -1,13 +1,18 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
+import io.vavr.collection.Stream;
 import io.vavr.control.Option;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public class GridTest {
   /*
      - Starting coordinate (0, 1)
@@ -45,8 +50,8 @@ public class GridTest {
   }
 
   @Test
-  @DisplayName("Should find paths.")
-  public void shouldFindPaths() {
+  @DisplayName("Should find path.")
+  public void shouldFindPath(final SoftAssertions softly) {
     final Grid grid = new Grid(
         5,
         5,
@@ -60,33 +65,15 @@ public class GridTest {
     final Coordinate start = Coordinate.of(0, 1);
     final Coordinate destination = Coordinate.of(4, 3);
 
-    final Path expected = new Path(
-        List.of(
-            start,
-            Coordinate.of(4, 1),
-            Coordinate.of(3, 1),
-            Coordinate.of(3, 2),
-            Coordinate.of(3, 3),
-            destination)
-            .reverse(),
-        HashMap.of(
-            Direction.RIGHT, 1),
-        List.of(
-            Direction.UP,
-            Direction.UP,
-            Direction.RIGHT,
-            Direction.RIGHT,
-            Direction.DOWN)
-            .reverse()
-    );
-
     final HashMap<Direction, Integer> directionLimits = HashMap.of(
         Direction.UP, 2,
         Direction.DOWN, 1,
         Direction.RIGHT, 3);
 
-    assertThat(grid.findPaths(start, destination, directionLimits))
-        .contains(expected);
+    final Path actual = grid.findPath(start, destination, directionLimits).get();
+
+    softly.assertThat(actual.head().equals(start));
+    softly.assertThat(actual.last().equals(destination));
   }
 
   /*
@@ -132,8 +119,10 @@ public class GridTest {
         Direction.LEFT, 3,
         Direction.RIGHT, 2);
 
-    assertThat(grid.findDirections(start, destination, directionLimits))
-        .containsAnyOf(
+    final List<Direction> actual = grid.findDirections(start, destination, directionLimits);
+
+    assertThat(actual)
+        .isIn(
             List.of(
                 Direction.UP,
                 Direction.UP,

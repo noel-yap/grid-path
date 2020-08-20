@@ -1,12 +1,10 @@
 import io.vavr.Function2;
 import io.vavr.Tuple;
-import io.vavr.Tuple3;
-import io.vavr.Value;
 import io.vavr.collection.HashMap;
-import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import io.vavr.collection.Stream;
 import io.vavr.control.Option;
 import org.assertj.core.util.VisibleForTesting;
 
@@ -88,22 +86,24 @@ public class Grid {
    * @param destination End {@link Coordinate}
    * @return All possible directions given the constraints
    */
-  public List<List<Direction>> findDirections(
+  public List<Direction> findDirections(
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    return findPaths(source, destination, directionLimits)
-        .map(p -> p.getDirections());
+    return findPath(source, destination, directionLimits)
+        .map(Path::getDirections)
+        .headOption()
+        .getOrElse(List.empty());
   }
 
   @VisibleForTesting
-  List<Path> findPaths(
+  Stream<Path> findPath(
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    final HashSet<Path> initialFromSourcePaths = HashSet.of(
+    final Stream<Path> initialFromSourcePaths = Stream.of(
         new Path(source, directionLimits));
-    final HashSet<Path> initialFromDestinationPaths = HashSet.of(
+    final Stream<Path> initialFromDestinationPaths = Stream.of(
         new Path(
             destination,
             HashMap.ofEntries(List.of(Direction.values())
@@ -111,44 +111,36 @@ public class Grid {
                     d.opposite(),
                     directionLimits.getOrElse(d, 0))))));
 
-    final Tuple3<Set<Path>, Map<Coordinate, Set<Path>>, Map<Coordinate, Set<Path>>> paths = explorePaths(Tuple.of(
-        HashSet.empty(),
+    return explorePaths(
         HashMap.of(source, initialFromSourcePaths),
-        HashMap.of(destination, initialFromDestinationPaths)));
-
-    return paths._1.toList();
+        HashMap.of(destination, initialFromDestinationPaths));
   }
 
   /**
-   * Explore from two different directions and meet in the middle if possbile.
+   * Explore from two different directions and meet in the middle if possible.
    *
-   * @param current Current solutions, paths from source, and paths from destination
+   * @param currentFromSource Current paths from source
+   * @param currentFromDestination Current paths from destination
    * @return Solutions if any
    */
-  private Tuple3<Set<Path>, Map<Coordinate, Set<Path>>, Map<Coordinate, Set<Path>>> explorePaths(
-      final Tuple3<Set<Path>, Map<Coordinate, Set<Path>>, Map<Coordinate, Set<Path>>> current) {
-    final Set<Path> solutions = current._1;
-    final Map<Coordinate, Set<Path>> currentFromSource = current._2;
-    final Map<Coordinate, Set<Path>> currentFromDestination = current._3;
+  private Stream<Path> explorePaths(
+      final Map<Coordinate, Stream<Path>> currentFromSource,
+      final Map<Coordinate, Stream<Path>> currentFromDestination) {
+    final Map<Coordinate, Stream<Path>> nextFromSource = nextPaths(currentFromSource);
+    final Map<Coordinate, Stream<Path>> combinedFromSource = currentFromSource // ensure fromSource and fromDestination don't walk passed each other
+        .merge(nextFromSource, Stream::appendAll);
 
-    if (!solutions.isEmpty() || currentFromSource.isEmpty() || currentFromDestination.isEmpty()) {
-      return current;
-    }
-
-    final Map<Coordinate, Set<Path>> nextFromSource = nextPaths(currentFromSource);
-    final Map<Coordinate, Set<Path>> combinedFromSource = currentFromSource // ensure fromSource and fromDestination don't walk passed each other
-        .merge(nextFromSource, Set::union);
-
-    final Map<Coordinate, Set<Path>> nextFromDestination = nextPaths(currentFromDestination);
-    final Map<Coordinate, Set<Path>> combinedFromDestination = currentFromDestination // ensure fromSource and fromDestination don't walk passed each other
-        .merge(nextFromDestination, Set::union);
+    final Map<Coordinate, Stream<Path>> nextFromDestination = nextPaths(currentFromDestination);
+    final Map<Coordinate, Stream<Path>> combinedFromDestination = currentFromDestination // ensure fromSource and fromDestination don't walk passed each other
+        .merge(nextFromDestination, Stream::appendAll);
 
     // find any of the fromSource and fromDestination paths that meet
-    final Set<Path> nextSolutions = combinedFromSource.keySet()
+    final Stream<Path> nextSolutions = combinedFromSource.keySet()
         .intersect(combinedFromDestination.keySet())
+        .toStream()
         .flatMap(c -> {
-          final List<Path> fromSourcePaths = combinedFromSource.get(c).get().toList();
-          final List<Path> fromDestinationPaths = combinedFromDestination.get(c).get().toList();
+          final Stream<Path> fromSourcePaths = combinedFromSource.getOrElse(c, Stream.empty());
+          final Stream<Path> fromDestinationPaths = combinedFromDestination.getOrElse(c, Stream.empty());
 
           return fromSourcePaths
               .crossProduct(fromDestinationPaths)
@@ -160,17 +152,16 @@ public class Grid {
               });
         });
 
-    return explorePaths(Tuple.of(
-        nextSolutions,
-        nextFromSource,
-        nextFromDestination));
+    return !nextSolutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()
+        ? nextSolutions
+        : explorePaths(nextFromSource, nextFromDestination);
   }
 
-  private Map<Coordinate, Set<Path>> nextPaths(final Map<Coordinate, Set<Path>> currentPaths) {
+  private Map<Coordinate, Stream<Path>> nextPaths(final Map<Coordinate, Stream<Path>> currentPaths) {
     return HashMap.ofEntries(
         currentPaths.values()
-            .flatMap(ps -> ps.flatMap(p -> p.nextPaths(this)))
-            .groupBy(Path::last)
-            .map(t2 -> t2.map2(Value::toSet)));
+            .reduce(Stream::appendAll)
+            .flatMap(p -> p.nextPaths(this))
+            .groupBy(Path::last));
   }
 }

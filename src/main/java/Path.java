@@ -2,6 +2,7 @@ import io.vavr.Tuple;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
+import io.vavr.collection.Stream;
 import io.vavr.control.Option;
 import lombok.EqualsAndHashCode;
 import org.assertj.core.util.VisibleForTesting;
@@ -47,6 +48,10 @@ public class Path {
 
   public List<Direction> getDirections() {
     return directions.reverse();
+  }
+
+  public Coordinate head() {
+    return path.last();
   }
 
   public Coordinate last() {
@@ -95,21 +100,15 @@ public class Path {
   /**
    * @return Potential paths
    */
-  public List<Path> nextPaths(final Grid grid) {
+  public Stream<Path> nextPaths(final Grid grid) {
     return directionLimits.keySet()
-        .toList()
-        .flatMap(d -> grid.followDirectionFrom(Option.of(path.head()), d)
-            .flatMap(next -> {
-              if (path.contains(next)) { // Don't retrace steps.
-                return Option.none();
-              } else { // Move onto next coordinate.`
-                return Option.of(new Path(
-                    path.prepend(next),
-                    directionLimits
-                        .put(d, directionLimits.get(d).get() - 1), // decrement direction limit
-                    directions.prepend(d)
-                ));
-              }
-            }));
+        .toStream()
+        .flatMap(d -> grid.followDirectionFrom(path.headOption(), d)
+            .filterNot(path::contains) // don't retrace steps
+            .map(next -> new Path(
+                path.prepend(next),
+                directionLimits
+                    .put(d, directionLimits.get(d).get() - 1), // decrement direction limit
+                directions.prepend(d))));
   }
 }
