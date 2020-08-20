@@ -1,7 +1,6 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -9,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Slf4j
 public class GridExploratoryTest {
   public static int WIDTH = 61;
   public static int HEIGHT = 59;
@@ -61,10 +59,10 @@ public class GridExploratoryTest {
         Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4,
         Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 2 + horizontalPrng.produce() * verticalPrng.produce() / 4);
 
-    log.info("direction limits = " + directionLimits);
-    log.info(grid.draw(start, destination));
-    log.info("===");
-    log.info("one solution = " + grid.findDirections(start, destination, directionLimits));
+    System.out.println("direction limits = " + directionLimits);
+    System.out.println(grid.draw(start, destination));
+    System.out.println("===");
+    System.out.println("one solution = " + grid.findDirections(start, destination, directionLimits));
   }
 
   final Coordinate randomCoordinate() {

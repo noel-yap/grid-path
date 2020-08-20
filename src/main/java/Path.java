@@ -50,12 +50,38 @@ public class Path {
     return directions.reverse();
   }
 
+  public int size() {
+    return path.size();
+  }
+
   public Coordinate head() {
     return path.last();
   }
 
   public Coordinate last() {
     return path.head();
+  }
+
+  public int compare(final Path that) {
+    final int lastCompare = this.last().compare(that.last());
+    final int upCompare = directionCompare(that, Direction.UP);
+    final int downCompare = directionCompare(that, Direction.DOWN);
+    final int leftCompare = directionCompare(that, Direction.LEFT);
+    final int rightCompare = directionCompare(that, Direction.RIGHT);
+
+    return lastCompare != 0
+        ? lastCompare
+        : upCompare != 0
+        ? upCompare
+        : downCompare != 0
+        ? downCompare
+        : leftCompare != 0
+        ? leftCompare
+        : rightCompare;
+  }
+
+  private int directionCompare(final Path that, final Direction d) {
+    return this.directionLimits.getOrElse(d, 0) - that.directionLimits.getOrElse(d, 0);
   }
 
   public Path reverse() {

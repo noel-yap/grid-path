@@ -36,8 +36,6 @@ dependencies {
   implementation 'io.vavr:vavr:1.+'
   implementation 'org.slf4j:slf4j-api:1.+'
 
-  testCompileOnly 'org.projectlombok:lombok:1.+'
-
   testImplementation 'org.apache.commons:commons-math3:3.+'
   testImplementation 'org.assertj:assertj-core:3.+'
   testImplementation 'org.assertj:assertj-vavr:+'

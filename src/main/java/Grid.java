@@ -162,6 +162,7 @@ public class Grid {
         currentPaths.values()
             .reduce(Stream::appendAll)
             .flatMap(p -> p.nextPaths(this))
+            .distinctBy(Path::compare)
             .groupBy(Path::last));
   }
 }

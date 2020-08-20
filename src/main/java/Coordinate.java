@@ -21,4 +21,13 @@ public class Coordinate {
   public String toString() {
     return "(" + this.x + ", " + this.y + ")";
   }
+
+  public int compare(final Coordinate that) {
+    final int xCompare = this.x - that.x;
+    final int yCompare = this.y - that.y;
+
+    return xCompare != 0
+        ? xCompare
+        : yCompare;
+  }
 }
