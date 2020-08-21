@@ -11,7 +11,7 @@ import org.assertj.core.util.VisibleForTesting;
  * List of {@link Coordinate}s each successive one adjacent to the previous
  */
 @EqualsAndHashCode
-public class Path {
+public class Path implements Comparable<Path> {
   private final List<Coordinate> path; // in reverse for both cpu and memory performance
   private final List<Direction> directions; // in reverse for both cpu and memory performance
   private final Map<Direction, Integer> directionLimits;
@@ -46,23 +46,8 @@ public class Path {
     return pathString + "; " + directions.reverse().toString() + "; " + directionLimits.toString();
   }
 
-  public List<Direction> getDirections() {
-    return directions.reverse();
-  }
-
-  public int size() {
-    return path.size();
-  }
-
-  public Coordinate head() {
-    return path.last();
-  }
-
-  public Coordinate last() {
-    return path.head();
-  }
-
-  public int compare(final Path that) {
+  @Override
+  public int compareTo(final Path that) {
     final int lastCompare = this.last().compare(that.last());
     final int upCompare = directionCompare(that, Direction.UP);
     final int downCompare = directionCompare(that, Direction.DOWN);
@@ -78,6 +63,18 @@ public class Path {
         : leftCompare != 0
         ? leftCompare
         : rightCompare;
+  }
+
+  public List<Direction> getDirections() {
+    return directions.reverse();
+  }
+
+  public Coordinate head() {
+    return path.last();
+  }
+
+  public Coordinate last() {
+    return path.head();
   }
 
   private int directionCompare(final Path that, final Direction d) {

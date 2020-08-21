@@ -7,6 +7,7 @@ import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
 import io.vavr.collection.Stream;
+import io.vavr.collection.TreeSet;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import lombok.EqualsAndHashCode;
@@ -143,18 +144,18 @@ public class Grid {
           final long startTime = System.nanoTime();
 
           System.out.println("0.0: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.alreadyVisited.size());
-          final Map<Coordinate, Stream<Path>> nextFromSource = nextPaths(currentFromSource.legs)
+          final Map<Coordinate, Set<Path>> nextFromSource = nextPaths(currentFromSource.legs)
               .filterNotKeys(currentFromSource.alreadyVisited::contains);
           System.out.println("0.1: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.size());
-          final Map<Coordinate, Stream<Path>> combinedFromSource = currentFromSource.legs // ensure fromSource and fromDestination don't walk passed each other
-              .merge(nextFromSource, Stream::appendAll);
+          final Map<Coordinate, Set<Path>> combinedFromSource = currentFromSource.legs // ensure fromSource and fromDestination don't walk passed each other
+              .merge(nextFromSource, Set::union);
 
           System.out.println("1.0: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.alreadyVisited.size());
-          final Map<Coordinate, Stream<Path>> nextFromDestination = nextPaths(currentFromDestination.legs)
+          final Map<Coordinate, Set<Path>> nextFromDestination = nextPaths(currentFromDestination.legs)
               .filterNotKeys(currentFromDestination.alreadyVisited::contains);
           System.out.println("1.1: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.size());
-          final Map<Coordinate, Stream<Path>> combinedFromDestination = currentFromDestination.legs // ensure fromSource and fromDestination don't walk passed each other
-              .merge(nextFromDestination, Stream::appendAll);
+          final Map<Coordinate, Set<Path>> combinedFromDestination = currentFromDestination.legs // ensure fromSource and fromDestination don't walk passed each other
+              .merge(nextFromDestination, Set::union);
 
           // find any of the fromSource and fromDestination paths that meet
           System.out.println("2: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
@@ -163,10 +164,11 @@ public class Grid {
               .toStream()
               .flatMap(c -> {
                 System.out.println("3: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
-                final Stream<Path> fromSourcePaths = combinedFromSource.getOrElse(c, Stream.empty());
-                final Stream<Path> fromDestinationPaths = combinedFromDestination.getOrElse(c, Stream.empty());
+                final Set<Path> fromSourcePaths = combinedFromSource.getOrElse(c, TreeSet.empty(Path::compareTo));
+                final Set<Path> fromDestinationPaths = combinedFromDestination.getOrElse(c, TreeSet.empty(Path::compareTo));
 
                 return fromSourcePaths
+                    .toStream()
                     .crossProduct(fromDestinationPaths)
                     .flatMap(cp -> {
                       System.out.println("4: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
@@ -191,11 +193,10 @@ public class Grid {
         .flatMap(Either::get);
   }
 
-  private Map<Coordinate, Stream<Path>> nextPaths(final Map<Coordinate, Stream<Path>> currentPaths) {
+  private Map<Coordinate, Set<Path>> nextPaths(final Map<Coordinate, Set<Path>> currentPaths) {
     return HashMap.ofEntries(
         currentPaths.values()
-            .reduce(Stream::appendAll)
-            .distinctBy(Path::compare)
+            .reduce(Set::union)
             .flatMap(p -> p.nextPaths(this))
             .groupBy(Path::last));
   }
@@ -203,19 +204,19 @@ public class Grid {
   @EqualsAndHashCode
   @ToString
   private static final class Legs {
-    public final Map<Coordinate, Stream<Path>> legs;
+    public final Map<Coordinate, Set<Path>> legs;
     public final Set<Coordinate> alreadyVisited;
 
     public Legs(final Path path) {
-      this(HashMap.of(path.head(), Stream.of(path)), HashSet.empty());
+      this(HashMap.of(path.head(), TreeSet.of(Path::compareTo, path)), HashSet.empty());
     }
 
-    public Legs(final Map<Coordinate, Stream<Path>> legs, final Set<Coordinate> alreadyVisited) {
+    public Legs(final Map<Coordinate, Set<Path>> legs, final Set<Coordinate> alreadyVisited) {
       this.legs = legs;
       this.alreadyVisited = alreadyVisited;
     }
 
-    public Legs andThen(final Map<Coordinate, Stream<Path>> next) {
+    public Legs andThen(final Map<Coordinate, Set<Path>> next) {
       return new Legs(next, alreadyVisited.addAll(next.keySet()));
     }
   }
