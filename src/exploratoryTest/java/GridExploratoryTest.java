@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
-  public static int HEIGHT = 4091;
+  public static int HEIGHT = 8219;
   public static int WIDTH = HEIGHT + 2;
 
   public static class RandomInt {

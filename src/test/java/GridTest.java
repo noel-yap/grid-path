@@ -1,7 +1,6 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
-import io.vavr.collection.Stream;
 import io.vavr.control.Option;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;

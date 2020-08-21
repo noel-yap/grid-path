@@ -45,7 +45,9 @@ dependencies {
 }
 
 tasks.withType(Test) {
-  jvmArgs = ['-Xmx1g']
-
   useJUnitPlatform()
+}
+
+exploratoryTest {
+  jvmArgs = ['-Xmx16g', '-Xss2m']
 }

@@ -38,7 +38,7 @@ public class PathTest {
             Direction.LEFT, 1,
             Direction.RIGHT, 1));
 
-    assertThat(path.nextPaths(grid))
+    assertThat(path.nextPaths(grid).toList())
         .isEqualTo(expected);
   }
 
@@ -56,7 +56,7 @@ public class PathTest {
 
     final Path path = new Path(Coordinate.of(0, 1), HashMap.empty());
 
-    assertThat(path.nextPaths(grid))
+    assertThat(path.nextPaths(grid).toList())
         .isEmpty();
   }
 }
