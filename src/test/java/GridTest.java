@@ -120,6 +120,8 @@ public class GridTest {
 
     final List<Direction> actual = grid.findDirections(start, destination, directionLimits);
 
+    assertThat(grid.followDirectionsFrom(Option.of(start), actual))
+        .isEqualTo(Option.of(destination));
     assertThat(actual)
         .isIn(
             List.of(

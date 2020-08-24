@@ -49,5 +49,5 @@ tasks.withType(Test) {
 }
 
 exploratoryTest {
-  jvmArgs = ['-Xmx16g', '-Xss2m']
+  jvmArgs = ['-Xmx16g', '-Xss1m']
 }

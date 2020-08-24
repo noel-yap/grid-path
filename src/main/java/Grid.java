@@ -1,6 +1,7 @@
 import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import io.vavr.Value;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
@@ -24,11 +25,13 @@ public class Grid {
   private final int height;
   private final Set<Coordinate> obstacles;
 
-  private static final Map<Direction, Function2<Grid, Coordinate, Coordinate>> directionNextCoordinateMap = HashMap.of(
+  private static final Map<Direction, Function2<Grid, Coordinate, Coordinate>> DIRECTION_NEXT_COORDINATE_MAP = HashMap.of(
       Direction.UP, (g, c) -> Coordinate.of(((c.x + g.height - 1) % g.height), c.y),
       Direction.DOWN, (g, c) -> Coordinate.of(((c.x + 1) % g.height), c.y),
       Direction.LEFT, (g, c) -> Coordinate.of(c.x, ((c.y + g.width - 1) % g.width)),
       Direction.RIGHT, (g, c) -> Coordinate.of(c.x, ((c.y + 1) % g.width)));
+
+  private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.#########s");
 
   public Grid(
       final int width,
@@ -42,29 +45,39 @@ public class Grid {
   public String draw(final Coordinate start, final Coordinate destination) {
     final StringBuilder result = new StringBuilder();
 
-    result.append("◯: Start\n");
-    result.append("⬤: Destination\n");
-    result.append("⬜: Available\n");
-    result.append("⬛: Blocked\n");
-    result.append("\n");
+    if (width * height > 1 << 16) {
+      result.append("start = " + start + "\n");
+      result.append("destination = " + destination + "\n");
+    } else {
+      result.append("◯: Start\n");
+      result.append("⬤: Destination\n");
+      result.append("⬜: Available\n");
+      result.append("⬛: Blocked\n");
+      result.append("\n");
 
-    for (int x = 0; x < height; ++x) {
-      for (int y = 0; y < width; ++y) {
-        final char c = x == start.x && y == start.y
-            ? '◯'
-            : x == destination.x && y == destination.y
-            ? '⬤'
-            : obstacles.contains(Coordinate.of(x, y))
-            ? '⬛'
-            : '⬜';
+      for (int x = 0; x < height; ++x) {
+        for (int y = 0; y < width; ++y) {
+          final char c = x == start.x && y == start.y
+              ? '◯'
+              : x == destination.x && y == destination.y
+              ? '⬤'
+              : obstacles.contains(Coordinate.of(x, y))
+              ? '⬛'
+              : '⬜';
 
-        result.append(c);
+          result.append(c);
+        }
+
+        result.append('\n');
       }
-
-      result.append('\n');
     }
 
     return result.toString();
+  }
+
+  public Option<Coordinate> followDirectionsFrom(final Option<Coordinate> from, final List<Direction> directions) {
+    return directions
+        .foldLeft(from, this::followDirectionFrom);
   }
 
   /**
@@ -85,7 +98,7 @@ public class Grid {
   }
 
   private Coordinate followDirectionFrom(final Coordinate from, final Direction direction) {
-    return directionNextCoordinateMap.get(direction).get().apply(this, from);
+    return DIRECTION_NEXT_COORDINATE_MAP.get(direction).get().apply(this, from);
   }
 
   /**
@@ -117,8 +130,6 @@ public class Grid {
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    final DecimalFormat timeFormat = new DecimalFormat("#.#########s");
-
     final Path initialFromSourcePaths = new Path(source, directionLimits);
     final Path initialFromDestinationPaths = new Path(
             destination,
@@ -134,6 +145,8 @@ public class Grid {
             new Legs(initialFromDestinationPaths))))
         .extend(e -> {
           if (e.isRight()) {
+            System.out.println("0: e = " + e);
+
             return e;
           }
 
@@ -143,27 +156,25 @@ public class Grid {
 
           final long startTime = System.nanoTime();
 
-          System.out.println("0.0: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.alreadyVisited.size());
-          final Map<Coordinate, Set<Path>> nextFromSource = nextPaths(currentFromSource.legs)
-              .filterNotKeys(currentFromSource.alreadyVisited::contains);
-          System.out.println("0.1: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.size());
+          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.legs.values().map(Set::size).sum() + ", " + currentFromSource.alreadyVisited.size());
+          final Map<Coordinate, Set<Path>> nextFromSource = nextPaths(currentFromSource);
+          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.size());
           final Map<Coordinate, Set<Path>> combinedFromSource = currentFromSource.legs // ensure fromSource and fromDestination don't walk passed each other
               .merge(nextFromSource, Set::union);
 
-          System.out.println("1.0: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.alreadyVisited.size());
-          final Map<Coordinate, Set<Path>> nextFromDestination = nextPaths(currentFromDestination.legs)
-              .filterNotKeys(currentFromDestination.alreadyVisited::contains);
-          System.out.println("1.1: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.size());
+          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.legs.values().map(Set::size).sum() + ", " + currentFromDestination.alreadyVisited.size());
+          final Map<Coordinate, Set<Path>> nextFromDestination = nextPaths(currentFromDestination);
+          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.size());
           final Map<Coordinate, Set<Path>> combinedFromDestination = currentFromDestination.legs // ensure fromSource and fromDestination don't walk passed each other
               .merge(nextFromDestination, Set::union);
 
           // find any of the fromSource and fromDestination paths that meet
-          System.out.println("2: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
+          System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
           final Stream<Path> nextSolutions = combinedFromSource.keySet()
               .intersect(combinedFromDestination.keySet())
               .toStream()
               .flatMap(c -> {
-                System.out.println("3: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
+                System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
                 final Set<Path> fromSourcePaths = combinedFromSource.getOrElse(c, TreeSet.empty(Path::compareTo));
                 final Set<Path> fromDestinationPaths = combinedFromDestination.getOrElse(c, TreeSet.empty(Path::compareTo));
 
@@ -171,7 +182,7 @@ public class Grid {
                     .toStream()
                     .crossProduct(fromDestinationPaths)
                     .flatMap(cp -> {
-                      System.out.println("4: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
+                      System.out.println("4: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
                       final Path fromSourcePath = cp._1;
                       final Path fromDestinationPath = cp._2;
 
@@ -179,7 +190,7 @@ public class Grid {
                     });
               });
 
-          System.out.println("5: depth = " + depth + "; time = " + timeFormat.format((System.nanoTime() - startTime) * 1e-9));
+          System.out.println("5: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
           if (!nextSolutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {
             return Either.right(nextSolutions);
           } else {
@@ -190,7 +201,13 @@ public class Grid {
           }
         })
         .dropWhile(Either::isLeft)
-        .flatMap(Either::get);
+        .head()
+        .get();
+  }
+
+  private Map<Coordinate, Set<Path>> nextPaths(final Legs current) {
+    return nextPaths(current.legs)
+        .filterNotKeys(current.alreadyVisited::contains);
   }
 
   private Map<Coordinate, Set<Path>> nextPaths(final Map<Coordinate, Set<Path>> currentPaths) {
@@ -217,7 +234,7 @@ public class Grid {
     }
 
     public Legs andThen(final Map<Coordinate, Set<Path>> next) {
-      return new Legs(next, alreadyVisited.addAll(next.keySet()));
+      return new Legs(next, legs.keySet().addAll(next.keySet()));
     }
   }
 }
