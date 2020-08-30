@@ -71,7 +71,6 @@ public class GridTest {
 
     final Path actual = grid.findPath(start, destination, directionLimits).get();
 
-    softly.assertThat(actual.head().equals(start));
     softly.assertThat(actual.last().equals(destination));
   }
 

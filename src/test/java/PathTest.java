@@ -19,10 +19,8 @@ public class PathTest {
             Coordinate.of(1, 1)));
 
     final var expected = List.of(new Path(
-        List.of(
-            Coordinate.of(0, 1),
-            Coordinate.of(4, 1))
-            .reverse(),
+        Coordinate.of(0, 1),
+        Coordinate.of(4, 1),
         HashMap.of(
             Direction.DOWN, 1,
             Direction.LEFT, 1,
@@ -31,6 +29,7 @@ public class PathTest {
     ));
 
     final Path path = new Path(
+        Coordinate.of(0, 1),
         Coordinate.of(0, 1),
         HashMap.of(
             Direction.UP, 1,
@@ -54,7 +53,10 @@ public class PathTest {
             Coordinate.of(1, 1),
             Coordinate.of(4, 1)));
 
-    final Path path = new Path(Coordinate.of(0, 1), HashMap.empty());
+    final Path path = new Path(
+        Coordinate.of(0, 1),
+        Coordinate.of(0, 1),
+        HashMap.empty());
 
     assertThat(path.nextPaths(grid).toList())
         .isEmpty();

@@ -1,7 +1,6 @@
 import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
-import io.vavr.Value;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
@@ -130,13 +129,11 @@ public class Grid {
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    final Path initialFromSourcePaths = new Path(source, directionLimits);
+    final Path initialFromSourcePaths = new Path(source, source, directionLimits);
     final Path initialFromDestinationPaths = new Path(
             destination,
-            HashMap.ofEntries(List.of(Direction.values())
-                .map(d -> Tuple.of(
-                    d.opposite(),
-                    directionLimits.getOrElse(d, 0)))));
+            destination,
+            directionLimits.mapKeys(Direction::opposite));
 
     return Stream.<Either<Tuple3<Integer, Legs, Legs>, Stream<Path>>>of(Either.left(
         Tuple.of(
@@ -186,7 +183,7 @@ public class Grid {
                       final Path fromSourcePath = cp._1;
                       final Path fromDestinationPath = cp._2;
 
-                      return fromSourcePath.join(fromDestinationPath.reverse());
+                      return fromSourcePath.meet(fromDestinationPath);
                     });
               });
 
@@ -225,7 +222,7 @@ public class Grid {
     public final Set<Coordinate> alreadyVisited;
 
     public Legs(final Path path) {
-      this(HashMap.of(path.head(), TreeSet.of(Path::compareTo, path)), HashSet.empty());
+      this(HashMap.of(path.last(), TreeSet.of(Path::compareTo, path)), HashSet.empty());
     }
 
     public Legs(final Map<Coordinate, Set<Path>> legs, final Set<Coordinate> alreadyVisited) {

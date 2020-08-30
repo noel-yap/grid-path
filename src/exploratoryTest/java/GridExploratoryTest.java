@@ -5,17 +5,30 @@ import io.vavr.collection.Set;
 import io.vavr.control.Option;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.CombinatoricsUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
-  public static int HEIGHT = 8219;
+  public static int HEIGHT = 16451;
   public static int WIDTH = HEIGHT + 2;
 
   final RandomInt horizontalPrng = new RandomInt(WIDTH);
   final RandomInt verticalPrng = new RandomInt(HEIGHT);
+
+  @Disabled
+  @Test
+  @DisplayName("Should draw grid.")
+  public void shouldDrawGrid() {
+    final var grid = new Grid(5, 5, HashSet.empty());
+
+    final var start = randomCoordinate(5, 5);
+    final var destination = randomCoordinate(5, 5);
+
+    System.out.println(grid.draw(start, destination));
+  }
 
   /*
    - WIDTH×HEIGHT Grid
@@ -34,10 +47,10 @@ public class GridExploratoryTest {
         .isNotEqualTo(destination);
 
     final var directionLimits = HashMap.of(
-        Direction.UP, (int) Math.sqrt(horizontalPrng.produce() * verticalPrng.produce()),
-        Direction.DOWN, (int) Math.sqrt(horizontalPrng.produce() * verticalPrng.produce()),
-        Direction.LEFT, (int) Math.sqrt(horizontalPrng.produce() * verticalPrng.produce()),
-        Direction.RIGHT, (int) Math.sqrt(horizontalPrng.produce() * verticalPrng.produce()));
+        Direction.UP, horizontalPrng.produce() * verticalPrng.produce() / 16,
+        Direction.DOWN, horizontalPrng.produce() * verticalPrng.produce() / 16,
+        Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 16,
+        Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 16);
 
     System.out.println("direction limits = " + directionLimits);
 
@@ -57,13 +70,35 @@ public class GridExploratoryTest {
     System.out.println("one solution = " + directions);
     System.out.println("number of steps = " + directions.size());
 
-    assertThat(grid.followDirectionsFrom(Option.of(start), directions))
-        .isEqualTo(Option.of(destination));
+    final Option<Coordinate> endOption = grid.followDirectionsFrom(Option.of(start), directions);
+    assertThat(endOption)
+        .isNotEmpty();
+
+    final Coordinate end = endOption.get();
+    assertThat(end)
+        .as(
+            "Obstacles near end are:\n"
+                + obstacles
+                .filter(o -> o.x - end.x < 2 && o.y - end.y < 2)
+                .toList()
+                .map(Coordinate::toString)
+                .intersperse(", ")
+                + "\n"
+                + "Direction limits are: "
+                + directionLimits)
+        .isIn(start, destination);
   }
 
-  final Coordinate randomCoordinate() {
-    final int x = verticalPrng.produce();
-    final int y = horizontalPrng.produce();
+  private Coordinate randomCoordinate(final int width, final int height) {
+    final int x = verticalPrng.produce(height);
+    final int y = horizontalPrng.produce(width);
+
+    return Coordinate.of(x, y);
+  }
+
+  private Coordinate randomCoordinate() {
+    final int x = verticalPrng.produce(HEIGHT);
+    final int y = horizontalPrng.produce(WIDTH);
 
     return Coordinate.of(x, y);
   }
@@ -77,7 +112,11 @@ public class GridExploratoryTest {
       this.maxExclusive = maxExclusive;
     }
 
-    final int produce() {
+    public int produce() {
+      return produce(this.maxExclusive);
+    }
+
+    public int produce(final int maxExclusive) {
       return prng.nextInt(maxExclusive);
     }
   }
