@@ -4,7 +4,7 @@ import lombok.EqualsAndHashCode;
  * 2D Cartesian Coordinate
  */
 @EqualsAndHashCode
-public class Coordinate {
+public class Coordinate implements Comparable<Coordinate> {
   public final int x;
   public final int y;
 
@@ -22,7 +22,8 @@ public class Coordinate {
     return "(" + this.x + ", " + this.y + ")";
   }
 
-  public int compare(final Coordinate that) {
+  @Override
+  public int compareTo(final Coordinate that) {
     final int xCompare = this.x - that.x;
     final int yCompare = this.y - that.y;
 

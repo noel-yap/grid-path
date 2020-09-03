@@ -116,17 +116,17 @@
 
 ## Solution
 
-Grids keep track of the obstacles.
-Paths keep track of the list of coordinates that have been visited, the directions to get there, and the available steps.
+`Grid` keeps track of the obstacles.
+`Legs` keep track of the list of recent coordinates that have been visited, the directions to get there, and the available steps.
 
 The general strategy is to start at both the starting and destination coordinates and try out each available step from each direction to find where they may meet.
-Each exploration keeps track of valid paths and which steps are still available.
+Each exploration keeps track of valid legs and which steps are still available.
 If an exploration hits an obstacle, retraces steps, or visits an already-visited coordinate, it's pruned out of the exploration space.
 The algorithm stops when it finds a solution or when it's known no solution exists. 
 
-Grid.findDirections is the entry point to the final problem. GridTest.shouldFindDirections verifies the given scenario.
+`Grid.findDirections` is the entry point to the final problem. `GridTest.shouldFindDirections` verifies the given scenario.
 
-GridExploratoryTest.shouldFindDirectionsToDestination exists for manual exploratory testing.
+`GridExploratoryTest.shouldFindDirectionsToDestination` exists for manual exploratory testing.
 
 ## Running the tests
 

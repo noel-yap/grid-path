@@ -1,9 +1,11 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
+import io.vavr.collection.Map;
+import io.vavr.collection.SortedSet;
+import io.vavr.collection.TreeSet;
 import io.vavr.control.Option;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,35 @@ import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class GridTest {
+  @Test
+  @DisplayName("Should meet legs.")
+  public void shouldMeetLegs() {
+    final var expected = HashMap.of(
+        Coordinate.of(1, 0), TreeSet.of(
+            new Directions(
+                List.of(Direction.RIGHT, Direction.UP),
+                HashMap.of(Direction.DOWN, 1, Direction.LEFT, 1))));
+
+    final var grid = new Grid(2, 2, HashSet.empty());
+
+    final Map<Direction, Integer> directionLimits = HashMap.of(
+        Direction.UP, 1,
+        Direction.DOWN, 1,
+        Direction.LEFT, 1,
+        Direction.RIGHT, 1);
+    final Map<Coordinate, SortedSet<Directions>> legs0 = HashMap.of(
+        Coordinate.of(0, 0), TreeSet.of(new Directions(List.of(Direction.UP), directionLimits)),
+        Coordinate.of(1, 1), TreeSet.of(new Directions(List.of(Direction.DOWN), HashMap.empty())));
+    final Map<Coordinate, SortedSet<Directions>> legs1 = HashMap.of(
+        Coordinate.of(0, 0), TreeSet.of(new Directions(List.of(Direction.LEFT), directionLimits)),
+        Coordinate.of(1, 1), TreeSet.of(new Directions(List.of(Direction.RIGHT), HashMap.empty())));
+
+    final Map<Coordinate, SortedSet<Directions>> actual = grid.meet(legs0, legs1);
+
+    Assertions.assertThat(actual)
+        .isEqualTo(expected);
+  }
+
   /*
      - Starting coordinate (0, 1)
      - Obstacle at (0, 2)
@@ -37,41 +68,15 @@ public class GridTest {
         5,
         5,
         HashSet.of(
-            Coordinate.of(0, 2)
+            Coordinate.of(2, 0)
         ));
 
-    final var start = Coordinate.of(0, 1);
+    final var start = Coordinate.of(1, 0);
 
     final var destination = grid.followDirectionFrom(Option.of(start), Direction.RIGHT);
 
     Assertions.assertThat(destination)
         .isEmpty();
-  }
-
-  @Test
-  @DisplayName("Should find path.")
-  public void shouldFindPath(final SoftAssertions softly) {
-    final Grid grid = new Grid(
-        5,
-        5,
-        HashSet.of(
-            Coordinate.of(0, 0),
-            Coordinate.of(0, 2),
-            Coordinate.of(1, 1),
-            Coordinate.of(4, 0),
-            Coordinate.of(4, 2)));
-
-    final Coordinate start = Coordinate.of(0, 1);
-    final Coordinate destination = Coordinate.of(4, 3);
-
-    final HashMap<Direction, Integer> directionLimits = HashMap.of(
-        Direction.UP, 2,
-        Direction.DOWN, 1,
-        Direction.RIGHT, 3);
-
-    final Path actual = grid.findPath(start, destination, directionLimits).get();
-
-    softly.assertThat(actual.last().equals(destination));
   }
 
   /*
@@ -96,20 +101,20 @@ public class GridTest {
   @Test
   @DisplayName("Should find directions to destination.")
   public void shouldFindDirectionsToDestination() {
-    final var start = Coordinate.of(0, 1);
-    final var destination = Coordinate.of(4, 3);
+    final var start = Coordinate.of(1, 0);
+    final var destination = Coordinate.of(3, 4);
 
     final Grid grid = new Grid(
         5,
         5,
         HashSet.of(
             Coordinate.of(0, 0),
-            Coordinate.of(0, 2),
-            Coordinate.of(1, 0),
+            Coordinate.of(2, 0),
+            Coordinate.of(0, 1),
             Coordinate.of(1, 1),
-            Coordinate.of(1, 2),
-            Coordinate.of(4, 0),
-            Coordinate.of(4, 2)));
+            Coordinate.of(2, 1),
+            Coordinate.of(0, 4),
+            Coordinate.of(2, 4)));
 
     final HashMap<Direction, Integer> directionLimits = HashMap.of(
         Direction.UP, 2,
@@ -117,11 +122,10 @@ public class GridTest {
         Direction.LEFT, 3,
         Direction.RIGHT, 2);
 
-    final List<Direction> actual = grid.findDirections(start, destination, directionLimits);
-
-    assertThat(grid.followDirectionsFrom(Option.of(start), actual))
+    final Option<List<Direction>> actual = grid.findDirections(start, destination, directionLimits);
+    assertThat(grid.followDirectionsFrom(Option.of(start), actual.get()))
         .isEqualTo(Option.of(destination));
-    assertThat(actual)
+    assertThat(actual.get())
         .isIn(
             List.of(
                 Direction.UP,

@@ -12,23 +12,12 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
+//  public static int HEIGHT = 7;
   public static int HEIGHT = 16451;
   public static int WIDTH = HEIGHT + 2;
 
   final RandomInt horizontalPrng = new RandomInt(WIDTH);
   final RandomInt verticalPrng = new RandomInt(HEIGHT);
-
-  @Disabled
-  @Test
-  @DisplayName("Should draw grid.")
-  public void shouldDrawGrid() {
-    final var grid = new Grid(5, 5, HashSet.empty());
-
-    final var start = randomCoordinate(5, 5);
-    final var destination = randomCoordinate(5, 5);
-
-    System.out.println(grid.draw(start, destination));
-  }
 
   /*
    - WIDTH×HEIGHT Grid
@@ -47,10 +36,10 @@ public class GridExploratoryTest {
         .isNotEqualTo(destination);
 
     final var directionLimits = HashMap.of(
-        Direction.UP, horizontalPrng.produce() * verticalPrng.produce() / 16,
-        Direction.DOWN, horizontalPrng.produce() * verticalPrng.produce() / 16,
-        Direction.LEFT, horizontalPrng.produce() * verticalPrng.produce() / 16,
-        Direction.RIGHT, horizontalPrng.produce() * verticalPrng.produce() / 16);
+        Direction.UP, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        Direction.DOWN, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        Direction.LEFT, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        Direction.RIGHT, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT));
 
     System.out.println("direction limits = " + directionLimits);
 
@@ -66,7 +55,7 @@ public class GridExploratoryTest {
 
     System.out.println("===");
 
-    final List<Direction> directions = grid.findDirections(start, destination, directionLimits);
+    final List<Direction> directions = grid.findDirections(start, destination, directionLimits).getOrElse(List.empty());
     System.out.println("one solution = " + directions);
     System.out.println("number of steps = " + directions.size());
 
@@ -79,7 +68,8 @@ public class GridExploratoryTest {
         .as(
             "Obstacles near end are:\n"
                 + obstacles
-                .filter(o -> o.x - end.x < 2 && o.y - end.y < 2)
+                .toStream()
+                .filter(o -> Math.abs((o.x - end.x + WIDTH) % WIDTH) < 2 && Math.abs((o.y - end.y + HEIGHT) % HEIGHT) < 2)
                 .toList()
                 .map(Coordinate::toString)
                 .intersperse(", ")
@@ -89,16 +79,13 @@ public class GridExploratoryTest {
         .isIn(start, destination);
   }
 
-  private Coordinate randomCoordinate(final int width, final int height) {
-    final int x = verticalPrng.produce(height);
-    final int y = horizontalPrng.produce(width);
-
-    return Coordinate.of(x, y);
+  private Coordinate randomCoordinate() {
+    return randomCoordinate(WIDTH, HEIGHT);
   }
 
-  private Coordinate randomCoordinate() {
-    final int x = verticalPrng.produce(HEIGHT);
-    final int y = horizontalPrng.produce(WIDTH);
+  private Coordinate randomCoordinate(final int width, final int height) {
+    final int x = horizontalPrng.produce(height);
+    final int y = verticalPrng.produce(width);
 
     return Coordinate.of(x, y);
   }

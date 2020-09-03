@@ -2,19 +2,18 @@ import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import io.vavr.collection.HashMap;
-import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import io.vavr.collection.SortedSet;
 import io.vavr.collection.Stream;
 import io.vavr.collection.TreeSet;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.assertj.core.util.VisibleForTesting;
 
 import java.text.DecimalFormat;
+import java.util.function.Function;
 
 /**
  * A grid with obstacles
@@ -25,10 +24,10 @@ public class Grid {
   private final Set<Coordinate> obstacles;
 
   private static final Map<Direction, Function2<Grid, Coordinate, Coordinate>> DIRECTION_NEXT_COORDINATE_MAP = HashMap.of(
-      Direction.UP, (g, c) -> Coordinate.of(((c.x + g.height - 1) % g.height), c.y),
-      Direction.DOWN, (g, c) -> Coordinate.of(((c.x + 1) % g.height), c.y),
-      Direction.LEFT, (g, c) -> Coordinate.of(c.x, ((c.y + g.width - 1) % g.width)),
-      Direction.RIGHT, (g, c) -> Coordinate.of(c.x, ((c.y + 1) % g.width)));
+      Direction.UP, (g, c) -> Coordinate.of(c.x, (c.y + g.height - 1) % g.height),
+      Direction.DOWN, (g, c) -> Coordinate.of(c.x, (c.y + g.height + 1) % g.height),
+      Direction.LEFT, (g, c) -> Coordinate.of((c.x + g.width - 1) % g.width, c.y),
+      Direction.RIGHT, (g, c) -> Coordinate.of((c.x + g.width + 1) % g.width, c.y));
 
   private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.#########s");
 
@@ -45,8 +44,8 @@ public class Grid {
     final StringBuilder result = new StringBuilder();
 
     if (width * height > 1 << 16) {
-      result.append("start = " + start + "\n");
-      result.append("destination = " + destination + "\n");
+      result.append("start = ").append(start).append("\n");
+      result.append("destination = ").append(destination).append("\n");
     } else {
       result.append("◯: Start\n");
       result.append("⬤: Destination\n");
@@ -107,14 +106,15 @@ public class Grid {
    * @param destination End {@link Coordinate}
    * @return All possible directions given the constraints
    */
-  public List<Direction> findDirections(
+  public Option<List<Direction>> findDirections(
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    return findPath(source, destination, directionLimits)
-        .map(Path::getDirections)
-        .headOption()
-        .getOrElse(List.empty());
+    final Map<Coordinate, SortedSet<Directions>> directions = findPath(source, destination, directionLimits);
+
+    return directions.isEmpty()
+        ? Option.none()
+        : Option.of(directions.head()._2.head().getDirections());
   }
 
   /**
@@ -125,25 +125,21 @@ public class Grid {
    * @return Solutions if any
    */
   @VisibleForTesting
-  Stream<Path> findPath(
+  Map<Coordinate, SortedSet<Directions>> findPath(
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    final Path initialFromSourcePaths = new Path(source, source, directionLimits);
-    final Path initialFromDestinationPaths = new Path(
-            destination,
-            destination,
-            directionLimits.mapKeys(Direction::opposite));
+    final Legs initialFromSourcePaths = new Legs(source, directionLimits);
+    final Legs initialFromDestinationPaths = new Legs(destination, directionLimits.mapKeys(Direction::opposite));
 
-    return Stream.<Either<Tuple3<Integer, Legs, Legs>, Stream<Path>>>of(Either.left(
-        Tuple.of(
-            1,
-            new Legs(initialFromSourcePaths),
-            new Legs(initialFromDestinationPaths))))
+    return Stream
+        .<Either<Tuple3<Integer, Legs, Legs>, Map<Coordinate, SortedSet<Directions>>>>of(Either.left(
+            Tuple.of(
+                1,
+                initialFromSourcePaths,
+                initialFromDestinationPaths)))
         .extend(e -> {
           if (e.isRight()) {
-            System.out.println("0: e = " + e);
-
             return e;
           }
 
@@ -153,48 +149,27 @@ public class Grid {
 
           final long startTime = System.nanoTime();
 
-          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.legs.values().map(Set::size).sum() + ", " + currentFromSource.alreadyVisited.size());
-          final Map<Coordinate, Set<Path>> nextFromSource = nextPaths(currentFromSource);
-          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.size());
-          final Map<Coordinate, Set<Path>> combinedFromSource = currentFromSource.legs // ensure fromSource and fromDestination don't walk passed each other
-              .merge(nextFromSource, Set::union);
+          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.size() + ", " + currentFromSource.alreadyVisited.size());
+          final Legs nextFromSource = currentFromSource.nextPaths(this);
+          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.legs.size() + ", " + nextFromSource.size() + ", " + nextFromSource.alreadyVisited.size());
+          final Map<Coordinate, SortedSet<Directions>> combinedFromSource = currentFromSource.legs.merge(nextFromSource.legs); // ensure fromSource and fromDestination don't walk passed each other
 
-          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.legs.values().map(Set::size).sum() + ", " + currentFromDestination.alreadyVisited.size());
-          final Map<Coordinate, Set<Path>> nextFromDestination = nextPaths(currentFromDestination);
-          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.size());
-          final Map<Coordinate, Set<Path>> combinedFromDestination = currentFromDestination.legs // ensure fromSource and fromDestination don't walk passed each other
-              .merge(nextFromDestination, Set::union);
+          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.size() + ", " + currentFromDestination.alreadyVisited.size());
+          final Legs nextFromDestination = currentFromDestination.nextPaths(this);
+          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.size() + ", " + nextFromDestination.alreadyVisited.size());
+          final Map<Coordinate, SortedSet<Directions>> combinedFromDestination = currentFromDestination.legs.merge(nextFromDestination.legs); // ensure fromDestination and fromDestination don't walk passed each other
 
-          // find any of the fromSource and fromDestination paths that meet
           System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
-          final Stream<Path> nextSolutions = combinedFromSource.keySet()
-              .intersect(combinedFromDestination.keySet())
-              .toStream()
-              .flatMap(c -> {
-                System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
-                final Set<Path> fromSourcePaths = combinedFromSource.getOrElse(c, TreeSet.empty(Path::compareTo));
-                final Set<Path> fromDestinationPaths = combinedFromDestination.getOrElse(c, TreeSet.empty(Path::compareTo));
+          final Map<Coordinate, SortedSet<Directions>> solutions = meet(combinedFromSource, combinedFromDestination);
 
-                return fromSourcePaths
-                    .toStream()
-                    .crossProduct(fromDestinationPaths)
-                    .flatMap(cp -> {
-                      System.out.println("4: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
-                      final Path fromSourcePath = cp._1;
-                      final Path fromDestinationPath = cp._2;
-
-                      return fromSourcePath.meet(fromDestinationPath);
-                    });
-              });
-
-          System.out.println("5: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
-          if (!nextSolutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {
-            return Either.right(nextSolutions);
+          System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
+          if (!solutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {
+            return Either.right(solutions);
           } else {
             return Either.left(Tuple.of(
                 depth + 1,
-                currentFromSource.andThen(nextFromSource),
-                currentFromDestination.andThen(nextFromDestination)));
+                nextFromSource,
+                nextFromDestination));
           }
         })
         .dropWhile(Either::isLeft)
@@ -202,36 +177,41 @@ public class Grid {
         .get();
   }
 
-  private Map<Coordinate, Set<Path>> nextPaths(final Legs current) {
-    return nextPaths(current.legs)
-        .filterNotKeys(current.alreadyVisited::contains);
-  }
+  /**
+   * Join together legs rhs meet each other. {@code rhs} will be reversed before joining.
+   *
+   * @param rhs Other set of legs
+   * @return Legs rhs have met each other
+   */
+  @VisibleForTesting
+  Map<Coordinate, SortedSet<Directions>> meet(final Map<Coordinate, SortedSet<Directions>> lhs, final Map<Coordinate, SortedSet<Directions>> rhs) {
+    final Set<Coordinate> meetingPoints = lhs.keySet()
+        .intersect(rhs.keySet());
 
-  private Map<Coordinate, Set<Path>> nextPaths(final Map<Coordinate, Set<Path>> currentPaths) {
-    return HashMap.ofEntries(
-        currentPaths.values()
-            .reduce(Set::union)
-            .flatMap(p -> p.nextPaths(this))
-            .groupBy(Path::last));
-  }
+    return meetingPoints
+        .map(c -> {
+          final SortedSet<Directions> thisDirections = lhs.get(c).get();
+          final SortedSet<Directions> thatDirections = rhs.get(c).get();
 
-  @EqualsAndHashCode
-  @ToString
-  private static final class Legs {
-    public final Map<Coordinate, Set<Path>> legs;
-    public final Set<Coordinate> alreadyVisited;
+          return HashMap.ofEntries(
+              thisDirections
+                  .toStream()
+                  .crossProduct(thatDirections)
+                  .map(t2 -> {
+                    final Directions reversedThatDirections = t2._2.reverse();
 
-    public Legs(final Path path) {
-      this(HashMap.of(path.last(), TreeSet.of(Path::compareTo, path)), HashSet.empty());
-    }
+                    final Coordinate endCoordinate = followDirectionsFrom(Option.of(c), reversedThatDirections.getDirections()).get();
 
-    public Legs(final Map<Coordinate, Set<Path>> legs, final Set<Coordinate> alreadyVisited) {
-      this.legs = legs;
-      this.alreadyVisited = alreadyVisited;
-    }
-
-    public Legs andThen(final Map<Coordinate, Set<Path>> next) {
-      return new Legs(next, legs.keySet().addAll(next.keySet()));
-    }
+                    return Tuple.of(
+                        endCoordinate,
+                        t2._1.appendAll(reversedThatDirections));
+                  })
+                  .filter(cd -> cd._2.directionLimits.forAll(dl -> dl._2 > -1))
+                  .groupBy(t2 -> t2._1)
+                  .mapValues(v -> v.map(t2 -> t2._2))
+                  .mapValues(v -> TreeSet.ofAll(Directions::compareTo, v)));
+        })
+        .foldLeft(HashMap.<Coordinate, TreeSet<Directions>>empty(), (accum, elt) -> accum.merge(elt, TreeSet::union))
+        .mapValues(Function.identity());
   }
 }
