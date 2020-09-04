@@ -49,5 +49,5 @@ tasks.withType(Test) {
 }
 
 exploratoryTest {
-  jvmArgs = ['-Xmx16g', '-Xss1m']
+  jvmArgs = ['-Xmx16g', '-Xss1m', '-XX:+HeapDumpOnOutOfMemoryError']
 }

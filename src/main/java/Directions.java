@@ -41,6 +41,14 @@ public class Directions implements Comparable<Directions> {
         : rightCompare;
   }
 
+  public boolean isEmpty() {
+    return directions.isEmpty();
+  }
+
+  public Direction last() {
+    return directions.head();
+  }
+
   public List<Direction> getDirections() {
     return directions.reverse();
   }

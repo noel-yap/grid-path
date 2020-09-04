@@ -13,6 +13,7 @@ import io.vavr.control.Option;
 import org.assertj.core.util.VisibleForTesting;
 
 import java.text.DecimalFormat;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -132,6 +133,27 @@ public class Grid {
     final Legs initialFromSourcePaths = new Legs(source, directionLimits);
     final Legs initialFromDestinationPaths = new Legs(destination, directionLimits.mapKeys(Direction::opposite));
 
+    final int deltaX = Math.abs(source.x - destination.x);
+    final int negativeDeltaX = width - deltaX;
+    final int deltaY = Math.abs(source.y - destination.y);
+    final int negativeDeltaY = height - deltaY;
+
+    final boolean oddStepCountPathPossible = !isEven(deltaX + deltaY)
+        || !isEven(deltaX + negativeDeltaY)
+        || !isEven(negativeDeltaX + deltaY)
+        || !isEven(negativeDeltaX + negativeDeltaY);
+    final BiFunction<Legs, Legs, Map<Coordinate, SortedSet<Directions>>> oddStepCountPathsProvider = oddStepCountPathPossible
+        ? (fromSource, nextFromDestination) -> meet(fromSource.legs, nextFromDestination.legs)
+        : (fromSource, nextFromDestination) -> HashMap.empty();
+
+    final boolean evenStepCountPathPossible = isEven(deltaX + deltaY)
+        || isEven(deltaX + negativeDeltaY)
+        || isEven(negativeDeltaX + deltaY)
+        || isEven(negativeDeltaX + negativeDeltaY);
+    final BiFunction<Legs, Legs, Map<Coordinate, SortedSet<Directions>>> evenStepCountPathsProvider = evenStepCountPathPossible
+        ? (fromSource, fromDestination) -> meet(fromSource.legs, fromDestination.legs)
+        : (fromSource, fromDestination) -> HashMap.empty();
+
     return Stream
         .<Either<Tuple3<Integer, Legs, Legs>, Map<Coordinate, SortedSet<Directions>>>>of(Either.left(
             Tuple.of(
@@ -149,20 +171,23 @@ public class Grid {
 
           final long startTime = System.nanoTime();
 
-          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.size() + ", " + currentFromSource.alreadyVisited.size());
+          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.size() + ", " + currentFromSource.priorEnds.size());
           final Legs nextFromSource = currentFromSource.nextPaths(this);
-          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.legs.size() + ", " + nextFromSource.size() + ", " + nextFromSource.alreadyVisited.size());
-          final Map<Coordinate, SortedSet<Directions>> combinedFromSource = currentFromSource.legs.merge(nextFromSource.legs); // ensure fromSource and fromDestination don't walk passed each other
+          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.legs.size() + ", " + nextFromSource.size() + ", " + nextFromSource.priorEnds.size());
 
-          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.size() + ", " + currentFromDestination.alreadyVisited.size());
+          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.size() + ", " + currentFromDestination.priorEnds.size());
           final Legs nextFromDestination = currentFromDestination.nextPaths(this);
-          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.size() + ", " + nextFromDestination.alreadyVisited.size());
-          final Map<Coordinate, SortedSet<Directions>> combinedFromDestination = currentFromDestination.legs.merge(nextFromDestination.legs); // ensure fromDestination and fromDestination don't walk passed each other
+          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.size() + ", " + nextFromDestination.priorEnds.size());
 
-          System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
-          final Map<Coordinate, SortedSet<Directions>> solutions = meet(combinedFromSource, combinedFromDestination);
+          final Map<Coordinate, SortedSet<Directions>> oddStepCountPaths = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
+          System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + oddStepCountPathPossible + ", size = " + oddStepCountPaths.size());
 
-          System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9));
+          final Map<Coordinate, SortedSet<Directions>> evenStepCountPaths = evenStepCountPathsProvider.apply(nextFromSource, nextFromDestination);
+          System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + evenStepCountPathPossible + ", size = " + evenStepCountPaths.size());
+
+          final Map<Coordinate, SortedSet<Directions>> solutions = oddStepCountPaths.merge(evenStepCountPaths);
+          System.out.println("4: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + solutions.size());
+
           if (!solutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {
             return Either.right(solutions);
           } else {
@@ -190,13 +215,13 @@ public class Grid {
 
     return meetingPoints
         .map(c -> {
-          final SortedSet<Directions> thisDirections = lhs.get(c).get();
-          final SortedSet<Directions> thatDirections = rhs.get(c).get();
+          final SortedSet<Directions> lhsDirections = lhs.get(c).get();
+          final SortedSet<Directions> rhsDirections = rhs.get(c).get();
 
           return HashMap.ofEntries(
-              thisDirections
+              lhsDirections
                   .toStream()
-                  .crossProduct(thatDirections)
+                  .crossProduct(rhsDirections)
                   .map(t2 -> {
                     final Directions reversedThatDirections = t2._2.reverse();
 
@@ -213,5 +238,9 @@ public class Grid {
         })
         .foldLeft(HashMap.<Coordinate, TreeSet<Directions>>empty(), (accum, elt) -> accum.merge(elt, TreeSet::union))
         .mapValues(Function.identity());
+  }
+
+  private static boolean isEven(final int n) {
+    return (n & 1) == 0;
   }
 }

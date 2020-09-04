@@ -22,8 +22,7 @@ public class LegsTest {
                 new Directions(List.of(Direction.UP), HashMap.of(Direction.UP, 1)),
                 new Directions(List.of(Direction.DOWN), HashMap.of(Direction.DOWN, 1)),
                 new Directions(List.of(Direction.LEFT), HashMap.of(Direction.LEFT, 1)),
-                new Directions(List.of(Direction.RIGHT), HashMap.of(Direction.RIGHT, 1)))),
-        HashSet.of(Coordinate.of(0, 0)));
+                new Directions(List.of(Direction.RIGHT), HashMap.of(Direction.RIGHT, 1)))));
 
     assertThat(legs.legs.size())
         .isEqualTo(2);
@@ -55,6 +54,35 @@ public class LegsTest {
                         HashMap.of(Direction.DOWN, 1)),
                     new Directions(
                         List.of(Direction.DOWN),
+                        HashMap.of(Direction.UP, 1)))));
+  }
+
+  @Test
+  @DisplayName("Should not double-back.")
+  public void shouldNotDoubleBack() {
+    final var grid = new Grid(
+        2,
+        2,
+        HashSet.empty());
+
+    final var directionLimits = HashMap.of(
+        Direction.UP, 1,
+        Direction.DOWN, 1,
+        Direction.LEFT, 1);
+    final var legs = new Legs(Coordinate.of(0, 0), directionLimits);
+
+    final Legs firstPassLegs = legs.nextPaths(grid);
+    final Legs secondPassLegs = firstPassLegs.nextPaths(grid);
+    assertThat(secondPassLegs.legs)
+        .containsExactlyInAnyOrder(
+            Tuple.of(
+                Coordinate.of(1, 1),
+                TreeSet.of(
+                    new Directions(
+                        List.of(Direction.LEFT, Direction.UP),
+                        HashMap.of(Direction.UP, 1)),
+                    new Directions(
+                        List.of(Direction.LEFT, Direction.DOWN),
                         HashMap.of(Direction.UP, 1)))));
   }
 }

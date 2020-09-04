@@ -6,13 +6,17 @@ import io.vavr.collection.Set;
 import io.vavr.collection.SortedSet;
 import io.vavr.collection.TreeSet;
 import io.vavr.control.Option;
+import lombok.EqualsAndHashCode;
 
 /**
  * Legs to or from coordinates
  */
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Legs {
+  @EqualsAndHashCode.Include
   public final Map<Coordinate, SortedSet<Directions>> legs;
-  public final Set<Coordinate> alreadyVisited;
+
+  public final Set<Coordinate> priorEnds;
 
   public Legs(final Coordinate coordinate, final Map<Direction, Integer> directionLimits) {
     this(
@@ -27,22 +31,9 @@ public class Legs {
 
   public Legs(
       final Map<Coordinate, SortedSet<Directions>> legs,
-      final Set<Coordinate> alreadyVisited) {
+      final Set<Coordinate> priorEnds) {
     this.legs = legs;
-    this.alreadyVisited = alreadyVisited;
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    if (!(obj instanceof Legs)) {
-      return false;
-    }
-
-    final Legs that = (Legs) obj;
-
-    return this.legs.keySet().equals(that.legs.keySet())
-        && this.legs
-            .forAll(t2 -> t2._2.equals(that.legs.get(t2._1).get()));
+    this.priorEnds = priorEnds;
   }
 
   @Override
@@ -68,8 +59,10 @@ public class Legs {
         .flatMap((fromCoordinate, ds) -> ds
             .flatMap(directions -> directions
                 .directionLimits.keySet()
+                .toStream()
+                .filter(direction -> directions.isEmpty() || !direction.equals(directions.last().opposite()))
                 .flatMap(direction -> grid.followDirectionFrom(Option.of(fromCoordinate), direction)
-                    .filterNot(alreadyVisited::contains)
+                    .filterNot(priorEnds::contains)
                     .map(nextCoordinate -> Tuple.of(
                         nextCoordinate,
                         directions.append(direction)))))
@@ -78,6 +71,6 @@ public class Legs {
 
     return new Legs(
         nextLegs,
-        legs.keySet().union(nextLegs.keySet()));
+        legs.keySet());
   }
 }
