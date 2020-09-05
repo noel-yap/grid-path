@@ -3,12 +3,16 @@ import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-import java.util.function.Predicate;
+import java.util.Comparator;
 
 @EqualsAndHashCode
+@ToString
 public class Directions implements Comparable<Directions> {
+  @EqualsAndHashCode.Include
   private final List<Direction> directions; // in reverse for both cpu and memory performance
+
   public final Map<Direction, Integer> directionLimits;
 
   public Directions(final List<Direction> directions, final Map<Direction, Integer> directionLimits) {
@@ -18,27 +22,14 @@ public class Directions implements Comparable<Directions> {
   }
 
   @Override
-  public String toString() {
-    return directions.toString();
-  }
-
-  @Override
   public int compareTo(final Directions that) {
-    final int sizeCompare = that.directions.size() - this.directions.size();
-    final int upCompare = directionCompare(that, Direction.UP);
-    final int downCompare = directionCompare(that, Direction.DOWN);
-    final int leftCompare = directionCompare(that, Direction.LEFT);
-    final int rightCompare = directionCompare(that, Direction.RIGHT);
+    final var comparator = Comparator
+        .comparing((Directions d) -> directionCompare(d, Direction.UP))
+        .thenComparing(d -> directionCompare(d, Direction.DOWN))
+        .thenComparing(d -> directionCompare(d, Direction.LEFT))
+        .thenComparing(d -> directionCompare(d, Direction.RIGHT));
 
-    return sizeCompare != 0
-        ? sizeCompare
-        : upCompare != 0
-        ? upCompare
-        : downCompare != 0
-        ? downCompare
-        : leftCompare != 0
-        ? leftCompare
-        : rightCompare;
+    return comparator.compare(this, that);
   }
 
   public boolean isEmpty() {
@@ -83,9 +74,7 @@ public class Directions implements Comparable<Directions> {
             .mapKeys(Direction::opposite));
   }
 
-  private int directionCompare(final Directions that, final Direction d) {
-    final Predicate<Direction> directionPredicate = direction -> direction == d;
-
-    return that.directions.count(directionPredicate) - this.directions.count(directionPredicate);
+  private int directionCompare(final Directions directions, final Direction direction) {
+    return directions.directions.count(direction::equals);
   }
 }

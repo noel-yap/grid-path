@@ -1,5 +1,6 @@
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,20 @@ public class DirectionsTest {
     assertThat(directions.directionLimits)
         .isEqualTo(HashMap.of(
             Direction.UP, -1));
+  }
+
+  @Test
+  @DisplayName("Should compare directions.")
+  public void shouldCompareDirections() {
+    final var directionsLhs = new Directions(
+        List.of(Direction.UP, Direction.LEFT),
+        HashMap.of(Direction.DOWN, 1));
+    final var directionsRhs = new Directions(
+        List.of(Direction.LEFT, Direction.UP),
+        HashMap.of(Direction.DOWN, 1));
+
+    Assertions.assertThat(directionsLhs)
+        .isEqualByComparingTo(directionsRhs);
   }
 
   @Test

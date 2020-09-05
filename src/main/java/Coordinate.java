@@ -1,5 +1,7 @@
 import lombok.EqualsAndHashCode;
 
+import java.util.Comparator;
+
 /**
  * 2D Cartesian Coordinate
  */
@@ -24,11 +26,10 @@ public class Coordinate implements Comparable<Coordinate> {
 
   @Override
   public int compareTo(final Coordinate that) {
-    final int xCompare = this.x - that.x;
-    final int yCompare = this.y - that.y;
+    final var comparator = Comparator
+        .comparing((Coordinate c) -> c.x)
+        .thenComparing(c -> c.y);
 
-    return xCompare != 0
-        ? xCompare
-        : yCompare;
+    return comparator.compare(this, that);
   }
 }
