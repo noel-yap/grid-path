@@ -40,6 +40,10 @@ public class Directions implements Comparable<Directions> {
     return directions.head();
   }
 
+  public int size() {
+    return directions.size();
+  }
+
   public List<Direction> getDirections() {
     return directions.reverse();
   }
@@ -56,13 +60,9 @@ public class Directions implements Comparable<Directions> {
         this.directions.prependAll(that.directions),
         HashMap.ofEntries(List.of(Direction.values())
             .map(d ->
-            {
-              final int dCount = that.directions.count(dThat -> dThat.equals(d));
-
-              return Tuple.of(
-                  d,
-                  this.directionLimits.getOrElse(d, 0) - dCount);
-            })));
+                Tuple.of(
+                    d,
+                    this.directionLimits.getOrElse(d, 0) - that.directions.count(d::equals)))));
   }
 
   public Directions reverse() {

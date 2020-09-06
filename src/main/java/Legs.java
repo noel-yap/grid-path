@@ -1,10 +1,10 @@
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
-import io.vavr.collection.SortedSet;
-import io.vavr.collection.TreeSet;
 import io.vavr.control.Option;
 import lombok.EqualsAndHashCode;
 
@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Legs {
   @EqualsAndHashCode.Include
-  public final Map<Coordinate, SortedSet<Directions>> legs;
+  public final Map<Coordinate, Array<Directions>> legs;
 
   public final Set<Coordinate> priorEnds;
 
@@ -22,15 +22,15 @@ public class Legs {
     this(
         HashMap.of(
             coordinate,
-            TreeSet.of(Directions::compareTo, new Directions(List.empty(), directionLimits))));
+            Array.of(new Directions(List.empty(), directionLimits))));
   }
 
-  public Legs(final Map<Coordinate, SortedSet<Directions>> legs) {
+  public Legs(final Map<Coordinate, Array<Directions>> legs) {
     this(legs, legs.keySet());
   }
 
   public Legs(
-      final Map<Coordinate, SortedSet<Directions>> legs,
+      final Map<Coordinate, Array<Directions>> legs,
       final Set<Coordinate> priorEnds) {
     this.legs = legs;
     this.priorEnds = priorEnds;
@@ -51,23 +51,23 @@ public class Legs {
    * @return Total number of legs
    */
   public Number size() {
-    return legs.values().map(Set::size).sum();
+    return legs.values().map(Array::size).sum();
   }
 
   public Legs nextPaths(final Grid grid) {
-    final Map<Coordinate, SortedSet<Directions>> nextLegs = legs
+    final Map<Coordinate, Array<Directions>> nextLegs = legs
         .flatMap((fromCoordinate, ds) -> ds
             .flatMap(directions -> directions
                 .directionLimits.keySet()
                 .toStream()
-                .filter(direction -> directions.isEmpty() || !direction.equals(directions.last().opposite()))
+                .filter(direction -> directions.isEmpty() || !direction.equals(directions.last().opposite())) // don't double back
                 .flatMap(direction -> grid.followDirectionFrom(Option.of(fromCoordinate), direction)
-                    .filterNot(priorEnds::contains)
+                    .filterNot(priorEnds::contains) // don't retrace steps
                     .map(nextCoordinate -> Tuple.of(
                         nextCoordinate,
                         directions.append(direction)))))
             .groupBy(t2 -> t2._1)
-            .mapValues(s -> s.map(t2 -> t2._2)));
+            .mapValues(t2s -> t2s.map(Tuple2::_2)));
 
     return new Legs(
         nextLegs,

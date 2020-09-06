@@ -5,14 +5,13 @@ import io.vavr.collection.Set;
 import io.vavr.control.Option;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.util.CombinatoricsUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
-//  public static int HEIGHT = 7;
+//  public static int HEIGHT = 5;
   public static int HEIGHT = 16451;
   public static int WIDTH = HEIGHT + 2;
 
@@ -30,7 +29,7 @@ public class GridExploratoryTest {
   @DisplayName("Should find directions to destination.")
   public void shouldFindDirectionsToDestination() {
     final Coordinate start = randomCoordinate();
-    final Coordinate destination = randomCoordinate();
+    final Coordinate destination = Coordinate.of((start.x + WIDTH / 2) % WIDTH, (start.y + HEIGHT / 2) % HEIGHT);
 
     assertThat(start)
         .isNotEqualTo(destination);

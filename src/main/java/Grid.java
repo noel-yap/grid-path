@@ -1,20 +1,18 @@
 import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
-import io.vavr.collection.SortedSet;
 import io.vavr.collection.Stream;
-import io.vavr.collection.TreeSet;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import org.assertj.core.util.VisibleForTesting;
 
 import java.text.DecimalFormat;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * A grid with obstacles
@@ -111,7 +109,7 @@ public class Grid {
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
-    final Map<Coordinate, SortedSet<Directions>> directions = findPath(source, destination, directionLimits);
+    final Map<Coordinate, Array<Directions>> directions = findPath(source, destination, directionLimits);
 
     return directions.isEmpty()
         ? Option.none()
@@ -126,7 +124,7 @@ public class Grid {
    * @return Solutions if any
    */
   @VisibleForTesting
-  Map<Coordinate, SortedSet<Directions>> findPath(
+  Map<Coordinate, Array<Directions>> findPath(
       final Coordinate source,
       final Coordinate destination,
       final Map<Direction, Integer> directionLimits) {
@@ -142,7 +140,7 @@ public class Grid {
         || !isEven(deltaX + negativeDeltaY)
         || !isEven(negativeDeltaX + deltaY)
         || !isEven(negativeDeltaX + negativeDeltaY);
-    final BiFunction<Legs, Legs, Map<Coordinate, SortedSet<Directions>>> oddStepCountPathsProvider = oddStepCountPathPossible
+    final BiFunction<Legs, Legs, Map<Coordinate, Array<Directions>>> oddStepCountPathsProvider = oddStepCountPathPossible
         ? (fromSource, nextFromDestination) -> meet(fromSource.legs, nextFromDestination.legs)
         : (fromSource, nextFromDestination) -> HashMap.empty();
 
@@ -150,12 +148,12 @@ public class Grid {
         || isEven(deltaX + negativeDeltaY)
         || isEven(negativeDeltaX + deltaY)
         || isEven(negativeDeltaX + negativeDeltaY);
-    final BiFunction<Legs, Legs, Map<Coordinate, SortedSet<Directions>>> evenStepCountPathsProvider = evenStepCountPathPossible
+    final BiFunction<Legs, Legs, Map<Coordinate, Array<Directions>>> evenStepCountPathsProvider = evenStepCountPathPossible
         ? (fromSource, fromDestination) -> meet(fromSource.legs, fromDestination.legs)
         : (fromSource, fromDestination) -> HashMap.empty();
 
     return Stream
-        .<Either<Tuple3<Integer, Legs, Legs>, Map<Coordinate, SortedSet<Directions>>>>of(Either.left(
+        .<Either<Tuple3<Integer, Legs, Legs>, Map<Coordinate, Array<Directions>>>>of(Either.left(
             Tuple.of(
                 1,
                 initialFromSourcePaths,
@@ -179,13 +177,13 @@ public class Grid {
           final Legs nextFromDestination = currentFromDestination.nextPaths(this);
           System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.size() + ", " + nextFromDestination.priorEnds.size());
 
-          final Map<Coordinate, SortedSet<Directions>> oddStepCountPaths = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
+          final Map<Coordinate, Array<Directions>> oddStepCountPaths = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
           System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + oddStepCountPathPossible + ", size = " + oddStepCountPaths.size());
 
-          final Map<Coordinate, SortedSet<Directions>> evenStepCountPaths = evenStepCountPathsProvider.apply(nextFromSource, nextFromDestination);
+          final Map<Coordinate, Array<Directions>> evenStepCountPaths = evenStepCountPathsProvider.apply(nextFromSource, nextFromDestination);
           System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + evenStepCountPathPossible + ", size = " + evenStepCountPaths.size());
 
-          final Map<Coordinate, SortedSet<Directions>> solutions = oddStepCountPaths.merge(evenStepCountPaths);
+          final Map<Coordinate, Array<Directions>> solutions = oddStepCountPaths.merge(evenStepCountPaths);
           System.out.println("4: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + solutions.size());
 
           if (!solutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {
@@ -209,15 +207,20 @@ public class Grid {
    * @return Legs rhs have met each other
    */
   @VisibleForTesting
-  Map<Coordinate, SortedSet<Directions>> meet(final Map<Coordinate, SortedSet<Directions>> lhs, final Map<Coordinate, SortedSet<Directions>> rhs) {
+  Map<Coordinate, Array<Directions>> meet(final Map<Coordinate, Array<Directions>> lhs, final Map<Coordinate, Array<Directions>> rhs) {
+    final long startTime = System.nanoTime();
+
+    System.out.println("0.0: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + lhs.size() + ", " + rhs.size());
     final Set<Coordinate> meetingPoints = lhs.keySet()
         .intersect(rhs.keySet());
+    System.out.println("0.1: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + meetingPoints.size());
 
     return meetingPoints
         .map(c -> {
-          final SortedSet<Directions> lhsDirections = lhs.get(c).get();
-          final SortedSet<Directions> rhsDirections = rhs.get(c).get();
+          final Array<Directions> lhsDirections = lhs.get(c).get();
+          final Array<Directions> rhsDirections = rhs.get(c).get();
 
+          System.out.println("1: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + lhsDirections.size() + ", " + rhsDirections.size());
           return HashMap.ofEntries(
               lhsDirections
                   .toStream()
@@ -231,13 +234,21 @@ public class Grid {
                         endCoordinate,
                         t2._1.appendAll(reversedThatDirections));
                   })
+                  .peek(t2 -> System.out.println("2: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
                   .filter(cd -> cd._2.directionLimits.forAll(dl -> dl._2 > -1))
+                  .peek(t2 -> System.out.println("3: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
                   .groupBy(t2 -> t2._1)
                   .mapValues(v -> v.map(t2 -> t2._2))
-                  .mapValues(v -> TreeSet.ofAll(Directions::compareTo, v)));
+                  .mapValues(Array::ofAll)
+                  .peek(t2 -> System.out.println("4: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size())));
         })
-        .foldLeft(HashMap.<Coordinate, TreeSet<Directions>>empty(), (accum, elt) -> accum.merge(elt, TreeSet::union))
-        .mapValues(Function.identity());
+        .foldLeft(
+            HashMap.empty(),
+            (accum, elt) -> accum.merge(
+                elt,
+                (lhsDirections, rhsDirections) -> lhsDirections
+                    .appendAll(rhsDirections)
+                    .distinctBy(Directions::compareTo)));
   }
 
   private static boolean isEven(final int n) {

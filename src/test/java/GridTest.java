@@ -1,9 +1,8 @@
+import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
-import io.vavr.collection.SortedSet;
-import io.vavr.collection.TreeSet;
 import io.vavr.control.Option;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -19,10 +18,10 @@ public class GridTest {
   @DisplayName("Should meet legs.")
   public void shouldMeetLegs() {
     final var expected = HashMap.of(
-        Coordinate.of(1, 0), TreeSet.of(
+        Coordinate.of(1, 0), Array.of(
             new Directions(
                 List.of(Direction.RIGHT, Direction.UP),
-                HashMap.of(Direction.DOWN, 1, Direction.LEFT, 1))));
+                HashMap.of(Direction.UP, 1, Direction.DOWN, 1, Direction.LEFT, 1))));
 
     final var grid = new Grid(2, 2, HashSet.empty());
 
@@ -31,14 +30,14 @@ public class GridTest {
         Direction.DOWN, 1,
         Direction.LEFT, 1,
         Direction.RIGHT, 1);
-    final Map<Coordinate, SortedSet<Directions>> legs0 = HashMap.of(
-        Coordinate.of(0, 0), TreeSet.of(new Directions(List.of(Direction.UP), directionLimits)),
-        Coordinate.of(1, 1), TreeSet.of(new Directions(List.of(Direction.DOWN), HashMap.empty())));
-    final Map<Coordinate, SortedSet<Directions>> legs1 = HashMap.of(
-        Coordinate.of(0, 0), TreeSet.of(new Directions(List.of(Direction.LEFT), directionLimits)),
-        Coordinate.of(1, 1), TreeSet.of(new Directions(List.of(Direction.RIGHT), HashMap.empty())));
+    final Map<Coordinate, Array<Directions>> legs0 = HashMap.of(
+        Coordinate.of(0, 0), Array.of(new Directions(List.of(Direction.UP), directionLimits)),
+        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.DOWN), HashMap.empty())));
+    final Map<Coordinate, Array<Directions>> legs1 = HashMap.of(
+        Coordinate.of(0, 0), Array.of(new Directions(List.of(Direction.LEFT), directionLimits)),
+        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.RIGHT), HashMap.empty())));
 
-    final Map<Coordinate, SortedSet<Directions>> actual = grid.meet(legs0, legs1);
+    final Map<Coordinate, Array<Directions>> actual = grid.meet(legs0, legs1);
 
     Assertions.assertThat(actual)
         .isEqualTo(expected);
