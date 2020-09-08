@@ -1,6 +1,5 @@
 import com.sun.management.HotSpotDiagnosticMXBean;
 import io.vavr.collection.Array;
-import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.TreeSet;
@@ -17,7 +16,7 @@ public class MemoryExploratoryTest {
   @Test
   @DisplayName("Explore data structure memory sizes.")
   public void exploreDataStructureMemorySizes() throws Exception {
-    final var directions = new Directions(List.empty(), HashMap.empty());
+    final var directions = new Directions(List.empty(), DirectionLimits.empty());
 
     final var directionsArray = Array.of(directions);
     final var directionsList = List.of(directions);

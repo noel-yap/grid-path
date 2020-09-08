@@ -21,21 +21,17 @@ public class GridTest {
         Coordinate.of(1, 0), Array.of(
             new Directions(
                 List.of(Direction.RIGHT, Direction.UP),
-                HashMap.of(Direction.UP, 1, Direction.DOWN, 1, Direction.LEFT, 1))));
+                DirectionLimits.of(1, 1, 1, 0))));
 
     final var grid = new Grid(2, 2, HashSet.empty());
 
-    final Map<Direction, Integer> directionLimits = HashMap.of(
-        Direction.UP, 1,
-        Direction.DOWN, 1,
-        Direction.LEFT, 1,
-        Direction.RIGHT, 1);
+    final DirectionLimits directionLimits = DirectionLimits.of(1, 1, 1, 1);
     final Map<Coordinate, Array<Directions>> legs0 = HashMap.of(
         Coordinate.of(0, 0), Array.of(new Directions(List.of(Direction.UP), directionLimits)),
-        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.DOWN), HashMap.empty())));
+        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.DOWN), DirectionLimits.empty())));
     final Map<Coordinate, Array<Directions>> legs1 = HashMap.of(
         Coordinate.of(0, 0), Array.of(new Directions(List.of(Direction.LEFT), directionLimits)),
-        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.RIGHT), HashMap.empty())));
+        Coordinate.of(1, 1), Array.of(new Directions(List.of(Direction.RIGHT), DirectionLimits.empty())));
 
     final Map<Coordinate, Array<Directions>> actual = grid.meet(legs0, legs1);
 
@@ -115,11 +111,7 @@ public class GridTest {
             Coordinate.of(0, 4),
             Coordinate.of(2, 4)));
 
-    final HashMap<Direction, Integer> directionLimits = HashMap.of(
-        Direction.UP, 2,
-        Direction.DOWN, 2,
-        Direction.LEFT, 3,
-        Direction.RIGHT, 2);
+    final DirectionLimits directionLimits = DirectionLimits.of(2, 2, 3, 2);
 
     final Option<List<Direction>> actual = grid.findDirections(start, destination, directionLimits);
     assertThat(grid.followDirectionsFrom(Option.of(start), actual.get()))

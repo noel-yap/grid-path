@@ -18,18 +18,16 @@ public class LegsTest {
     final Legs legs = new Legs(
         HashMap.of(
             Coordinate.of(0, 0),
-            Array.of(new Directions(List.of(Direction.UP), HashMap.of(Direction.UP, 1))),
+            Array.of(new Directions(List.of(Direction.UP), DirectionLimits.of(1, 0, 0, 0))),
             Coordinate.of(1, 1),
             Array.of(
-                new Directions(List.of(Direction.UP), HashMap.of(Direction.UP, 1)),
-                new Directions(List.of(Direction.DOWN), HashMap.of(Direction.DOWN, 1)),
-                new Directions(List.of(Direction.LEFT), HashMap.of(Direction.LEFT, 1)),
-                new Directions(List.of(Direction.RIGHT), HashMap.of(Direction.RIGHT, 1)))));
+                new Directions(List.of(Direction.UP), DirectionLimits.of(1, 0, 0, 0)),
+                new Directions(List.of(Direction.DOWN), DirectionLimits.of(0, 1, 0, 0)),
+                new Directions(List.of(Direction.LEFT), DirectionLimits.of(0, 0, 1, 0)),
+                new Directions(List.of(Direction.RIGHT), DirectionLimits.of(0, 0, 0, 1)))));
 
     assertThat(legs.legs.size())
         .isEqualTo(2);
-    assertThat(legs.size())
-        .isEqualTo(5L);
   }
 
   @Test
@@ -40,9 +38,7 @@ public class LegsTest {
         2,
         HashSet.empty());
 
-    final var directionLimits = HashMap.of(
-        Direction.UP, 1,
-        Direction.DOWN, 1);
+    final var directionLimits = DirectionLimits.of(1, 1, 0, 0);
     final var legs = new Legs(Coordinate.of(0, 0), directionLimits);
 
     final Legs firstPassLegs = legs.nextPaths(grid);
@@ -53,10 +49,10 @@ public class LegsTest {
         .containsExactlyInAnyOrder(
             new Directions(
                 List.of(Direction.UP),
-                HashMap.of(Direction.DOWN, 1)),
+                DirectionLimits.of(0, 1, 0, 0)),
             new Directions(
                 List.of(Direction.DOWN),
-                HashMap.of(Direction.UP, 1)));
+                DirectionLimits.of(1, 0, 0, 0)));
   }
 
   @Test
@@ -67,10 +63,7 @@ public class LegsTest {
         2,
         HashSet.empty());
 
-    final var directionLimits = HashMap.of(
-        Direction.UP, 1,
-        Direction.DOWN, 1,
-        Direction.LEFT, 1);
+    final var directionLimits = DirectionLimits.of(1, 1, 1, 0);
     final var legs = new Legs(Coordinate.of(0, 0), directionLimits);
 
     final Legs firstPassLegs = legs.nextPaths(grid);
@@ -82,9 +75,9 @@ public class LegsTest {
         .containsExactlyInAnyOrder(
             new Directions(
                 List.of(Direction.LEFT, Direction.UP),
-                HashMap.of(Direction.DOWN, 1)),
+                DirectionLimits.of(0, 1, 0, 0)),
             new Directions(
                 List.of(Direction.LEFT, Direction.DOWN),
-                HashMap.of(Direction.UP, 1)));
+                DirectionLimits.of(1, 0, 0, 0)));
   }
 }

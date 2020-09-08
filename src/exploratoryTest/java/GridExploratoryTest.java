@@ -34,11 +34,11 @@ public class GridExploratoryTest {
     assertThat(start)
         .isNotEqualTo(destination);
 
-    final var directionLimits = HashMap.of(
-        Direction.UP, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
-        Direction.DOWN, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
-        Direction.LEFT, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
-        Direction.RIGHT, (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT));
+    final var directionLimits = DirectionLimits.of(
+        (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT),
+        (int) (horizontalPrng.produce() * verticalPrng.produce() / Math.log(WIDTH * HEIGHT) + WIDTH + HEIGHT));
 
     System.out.println("direction limits = " + directionLimits);
 

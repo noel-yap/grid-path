@@ -18,7 +18,7 @@ public class Legs {
 
   public final Set<Coordinate> priorEnds;
 
-  public Legs(final Coordinate coordinate, final Map<Direction, Integer> directionLimits) {
+  public Legs(final Coordinate coordinate, final DirectionLimits directionLimits) {
     this(
         HashMap.of(
             coordinate,
@@ -45,29 +45,22 @@ public class Legs {
     return legs.isEmpty();
   }
 
-  /**
-   * Total number of legs
-   *
-   * @return Total number of legs
-   */
-  public Number size() {
-    return legs.values().map(Array::size).sum();
-  }
-
   public Legs nextPaths(final Grid grid) {
-    final Map<Coordinate, Array<Directions>> nextLegs = legs
-        .flatMap((fromCoordinate, ds) -> ds
-            .flatMap(directions -> directions
-                .directionLimits.keySet()
-                .toStream()
-                .filter(direction -> directions.isEmpty() || !direction.equals(directions.last().opposite())) // don't double back
-                .flatMap(direction -> grid.followDirectionFrom(Option.of(fromCoordinate), direction)
-                    .filterNot(priorEnds::contains) // don't retrace steps
-                    .map(nextCoordinate -> Tuple.of(
-                        nextCoordinate,
-                        directions.append(direction)))))
-            .groupBy(t2 -> t2._1)
-            .mapValues(t2s -> t2s.map(Tuple2::_2)));
+    final Map<Coordinate, Array<Directions>> nextLegs = HashMap.ofEntries(
+        legs
+            .toStream()
+            .flatMap(legsEntry -> legsEntry._2
+                .flatMap(directions -> directions
+                    .directionLimits
+                    .getAvailable()
+                    .filter(direction -> directions.isEmpty() || !direction.equals(directions.last().opposite())) // don't double back
+                    .flatMap(direction -> grid.followDirectionFrom(Option.of(legsEntry._1), direction)
+                        .filterNot(priorEnds::contains) // don't retrace steps
+                        .map(nextCoordinate -> Tuple.of(
+                            nextCoordinate,
+                            directions.append(direction)))))
+                .groupBy(Tuple2::_1)
+                .mapValues(t2 -> t2.map(Tuple2::_2))));
 
     return new Legs(
         nextLegs,

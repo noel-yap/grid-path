@@ -108,7 +108,7 @@ public class Grid {
   public Option<List<Direction>> findDirections(
       final Coordinate source,
       final Coordinate destination,
-      final Map<Direction, Integer> directionLimits) {
+      final DirectionLimits directionLimits) {
     final Map<Coordinate, Array<Directions>> directions = findPath(source, destination, directionLimits);
 
     return directions.isEmpty()
@@ -127,9 +127,9 @@ public class Grid {
   Map<Coordinate, Array<Directions>> findPath(
       final Coordinate source,
       final Coordinate destination,
-      final Map<Direction, Integer> directionLimits) {
+      final DirectionLimits directionLimits) {
     final Legs initialFromSourcePaths = new Legs(source, directionLimits);
-    final Legs initialFromDestinationPaths = new Legs(destination, directionLimits.mapKeys(Direction::opposite));
+    final Legs initialFromDestinationPaths = new Legs(destination, directionLimits.opposite());
 
     final int deltaX = Math.abs(source.x - destination.x);
     final int negativeDeltaX = width - deltaX;
@@ -169,13 +169,13 @@ public class Grid {
 
           final long startTime = System.nanoTime();
 
-          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.size() + ", " + currentFromSource.priorEnds.size());
+          System.out.println("0.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromSource.legs.size() + ", " + currentFromSource.priorEnds.size());
           final Legs nextFromSource = currentFromSource.nextPaths(this);
-          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.legs.size() + ", " + nextFromSource.size() + ", " + nextFromSource.priorEnds.size());
+          System.out.println("0.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromSource.legs.size() + ", "  + nextFromSource.priorEnds.size());
 
-          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.size() + ", " + currentFromDestination.priorEnds.size());
+          System.out.println("1.0: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + currentFromDestination.legs.size() + ", " + currentFromDestination.priorEnds.size());
           final Legs nextFromDestination = currentFromDestination.nextPaths(this);
-          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.size() + ", " + nextFromDestination.priorEnds.size());
+          System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.priorEnds.size());
 
           final Map<Coordinate, Array<Directions>> oddStepCountPaths = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
           System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + oddStepCountPathPossible + ", size = " + oddStepCountPaths.size());
@@ -235,7 +235,7 @@ public class Grid {
                         t2._1.appendAll(reversedThatDirections));
                   })
                   .peek(t2 -> System.out.println("2: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
-                  .filter(cd -> cd._2.directionLimits.forAll(dl -> dl._2 > -1))
+                  .filter(cd -> cd._2.directionLimits.isValid())
                   .peek(t2 -> System.out.println("3: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
                   .groupBy(t2 -> t2._1)
                   .mapValues(v -> v.map(t2 -> t2._2))

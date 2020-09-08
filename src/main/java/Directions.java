@@ -1,7 +1,4 @@
-import io.vavr.Tuple;
-import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
-import io.vavr.collection.Map;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -13,12 +10,11 @@ public class Directions implements Comparable<Directions> {
   @EqualsAndHashCode.Include
   private final List<Direction> directions; // in reverse for both cpu and memory performance
 
-  public final Map<Direction, Integer> directionLimits;
+  public final DirectionLimits directionLimits;
 
-  public Directions(final List<Direction> directions, final Map<Direction, Integer> directionLimits) {
+  public Directions(final List<Direction> directions, final DirectionLimits directionLimits) {
     this.directions = directions;
-    this.directionLimits = directionLimits
-        .filterValues(l -> l != 0);
+    this.directionLimits = directionLimits;
   }
 
   @Override
@@ -51,18 +47,13 @@ public class Directions implements Comparable<Directions> {
   public Directions append(final Direction direction) {
     return new Directions(
         directions.prepend(direction),
-        directionLimits
-            .put(direction, directionLimits.get(direction).get() - 1));
+        directionLimits.decrementDirectionLimit(direction));
   }
 
   public Directions appendAll(final Directions that) {
     return new Directions(
         this.directions.prependAll(that.directions),
-        HashMap.ofEntries(List.of(Direction.values())
-            .map(d ->
-                Tuple.of(
-                    d,
-                    this.directionLimits.getOrElse(d, 0) - that.directions.count(d::equals)))));
+        this.directionLimits.decrementDirectionLimitsBy(that.directions));
   }
 
   public Directions reverse() {
@@ -70,8 +61,7 @@ public class Directions implements Comparable<Directions> {
         directions
             .map(Direction::opposite)
             .reverse(),
-        directionLimits
-            .mapKeys(Direction::opposite));
+        directionLimits.opposite());
   }
 
   private int directionCompare(final Directions directions, final Direction direction) {

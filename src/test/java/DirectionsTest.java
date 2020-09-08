@@ -1,4 +1,3 @@
-import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
@@ -7,47 +6,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.assertj.vavr.api.VavrAssertions.assertThat;
-
 @ExtendWith(SoftAssertionsExtension.class)
 public class DirectionsTest {
-  @Test
-  @DisplayName("Should filter out zero direction limit.")
-  public void shouldFilterOutZeroDirectionLimit() {
-    final var directions = new Directions(
-        List.empty(),
-        HashMap.of(
-            Direction.UP, 1,
-            Direction.DOWN, 0));
-
-    assertThat(directions.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.UP, 1));
-  }
-
-  @Test
-  @DisplayName("Should include negative direction limit.")
-  public void shouldIncludeNegativeDirectionLimit() {
-    final var directions = new Directions(
-        List.empty(),
-        HashMap.of(
-            Direction.UP, -1,
-            Direction.DOWN, 0));
-
-    assertThat(directions.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.UP, -1));
-  }
-
   @Test
   @DisplayName("Should compare directions.")
   public void shouldCompareDirections() {
     final var directionsLhs = new Directions(
         List.of(Direction.UP, Direction.LEFT),
-        HashMap.of(Direction.DOWN, 1));
+        DirectionLimits.of(0, 1, 0, 0));
     final var directionsRhs = new Directions(
         List.of(Direction.LEFT, Direction.UP),
-        HashMap.of(Direction.DOWN, 1));
+        DirectionLimits.of(0, 1, 0, 0));
 
     Assertions.assertThat(directionsLhs)
         .isEqualByComparingTo(directionsRhs);
@@ -58,27 +27,20 @@ public class DirectionsTest {
   public void shouldAppendDirection(final SoftAssertions softly) {
     final var directions = new Directions(
         List.empty(),
-        HashMap.of(
-            Direction.UP, 1,
-            Direction.DOWN, 1));
+        DirectionLimits.of(1, 1, 0, 0));
 
     final Directions actual = directions.append(Direction.UP);
 
     softly.assertThat(actual.getDirections())
         .isEqualTo(List.of(Direction.UP));
     softly.assertThat(actual.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.DOWN, 1));
+        .isEqualTo(DirectionLimits.of(0, 1, 0, 0));
   }
 
   @Test
   @DisplayName("Should append all directions.")
   public void shouldAppendAllDirections(final SoftAssertions softly) {
-    final var directionLimits = HashMap.of(
-        Direction.UP, 1,
-        Direction.DOWN, 1,
-        Direction.LEFT, 1,
-        Direction.RIGHT, 1);
+    final var directionLimits = DirectionLimits.of(1, 1, 1, 1);
     final var directions0 = new Directions(
         List.of(Direction.UP),
         directionLimits);
@@ -91,10 +53,7 @@ public class DirectionsTest {
     softly.assertThat(actual.getDirections())
         .isEqualTo(List.of(Direction.UP, Direction.LEFT));
     softly.assertThat(actual.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.UP, 1,
-            Direction.DOWN, 1,
-            Direction.RIGHT, 1));
+        .isEqualTo(DirectionLimits.of(1, 1, 0, 1));
   }
 
   @Test
@@ -102,28 +61,23 @@ public class DirectionsTest {
   public void shouldWindUpWithOverdraftOfDirectionLimits(final SoftAssertions softly) {
     final var directions0 = new Directions(
         List.of(Direction.UP),
-        HashMap.empty());
+        DirectionLimits.empty());
     final var directions1 = new Directions(
         List.of(Direction.LEFT),
-        HashMap.empty());
+        DirectionLimits.empty());
 
     final Directions actual = directions0.appendAll(directions1);
 
     softly.assertThat(actual.getDirections())
         .isEqualTo(List.of(Direction.UP, Direction.LEFT));
     softly.assertThat(actual.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.LEFT, -1));
+        .isEqualTo(DirectionLimits.of(0, 0, -1, 0));
   }
 
   @Test
   @DisplayName("Should reverse directions.")
   public void shouldReverseDirections(final SoftAssertions softly) {
-    final var directionLimits = HashMap.of(
-        Direction.UP, 1,
-        Direction.DOWN, 2,
-        Direction.LEFT, 3,
-        Direction.RIGHT, 5);
+    final var directionLimits = DirectionLimits.of(1, 2, 3, 5);
     final var directions = new Directions(
         List.of(Direction.UP, Direction.LEFT, Direction.DOWN, Direction.RIGHT),
         directionLimits);
@@ -133,10 +87,6 @@ public class DirectionsTest {
     softly.assertThat(actual.getDirections())
         .isEqualTo(List.of(Direction.DOWN, Direction.RIGHT, Direction.UP, Direction.LEFT));
     softly.assertThat(actual.directionLimits)
-        .isEqualTo(HashMap.of(
-            Direction.UP, 2,
-            Direction.DOWN, 1,
-            Direction.LEFT, 5,
-            Direction.RIGHT, 3));
+        .isEqualTo(DirectionLimits.of(2, 1, 5, 3));
   }
 }
