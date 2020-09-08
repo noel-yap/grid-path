@@ -49,5 +49,5 @@ tasks.withType(Test) {
 }
 
 exploratoryTest {
-  jvmArgs = ['-XX:+UnlockExperimentalVMOptions', '-XX:+UseShenandoahGC', '-Xms32g', '-Xmx32g', '-Xss1m', '-XX:+HeapDumpOnOutOfMemoryError']
+  jvmArgs = ['-Xms32g', '-Xmx32g', '-Xss1m', '-XX:+HeapDumpOnOutOfMemoryError']
 }
