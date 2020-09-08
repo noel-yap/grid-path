@@ -48,7 +48,6 @@ public class Legs {
   public Legs nextPaths(final Grid grid) {
     final Map<Coordinate, Array<Directions>> nextLegs = HashMap.ofEntries(
         legs
-            .toStream()
             .flatMap(legsEntry -> legsEntry._2
                 .flatMap(directions -> directions
                     .directionLimits
