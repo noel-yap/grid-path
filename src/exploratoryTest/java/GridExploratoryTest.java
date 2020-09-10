@@ -1,3 +1,4 @@
+import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
@@ -15,6 +16,7 @@ public class GridExploratoryTest {
 //  public static int HEIGHT = 269;
 //  public static int HEIGHT = 4099;
   public static int HEIGHT = 16451;
+//  public static int HEIGHT = 65579;
   public static int WIDTH = HEIGHT + 2;
 
   final RandomInt horizontalPrng = new RandomInt(WIDTH);
@@ -29,7 +31,7 @@ public class GridExploratoryTest {
    */
   @Test
   @DisplayName("Should find directions to destination.")
-  public void shouldFindDirectionsToDestination() {
+  public void shouldFindDirectionsToDestination() throws Exception {
     final Coordinate start = randomCoordinate();
     final Coordinate destination = Coordinate.of(
         (start.x + WIDTH / 2 + horizontalPrng.produce(3) - 1) % WIDTH,
@@ -61,6 +63,10 @@ public class GridExploratoryTest {
     final List<Direction> directions = grid.findDirections(start, destination, directionLimits).getOrElse(List.empty());
     System.out.println("one solution = " + directions);
     System.out.println("number of steps = " + directions.size());
+    Array.of(Direction.values())
+        .forEach(d -> System.out.println("\t" + d + ": " + directions.count(d::equals)));
+
+    ExploratoryTestUtils.dumpHeap();
 
     final Option<Coordinate> endOption = grid.followDirectionsFrom(Option.of(start), directions);
     assertThat(endOption)
@@ -68,17 +74,6 @@ public class GridExploratoryTest {
 
     final Coordinate end = endOption.get();
     assertThat(end)
-        .as(
-            "Obstacles near end are:\n"
-                + obstacles
-                .toStream()
-                .filter(o -> Math.abs((o.x - end.x + WIDTH) % WIDTH) < 2 && Math.abs((o.y - end.y + HEIGHT) % HEIGHT) < 2)
-                .toList()
-                .map(Coordinate::toString)
-                .intersperse(", ")
-                + "\n"
-                + "Direction limits are: "
-                + directionLimits)
         .isIn(start, destination);
   }
 

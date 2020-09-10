@@ -209,17 +209,14 @@ public class Grid {
   Map<Coordinate, Array<Directions>> meet(final Map<Coordinate, Array<Directions>> lhs, final Map<Coordinate, Array<Directions>> rhs) {
     final long startTime = System.nanoTime();
 
-    System.out.println("0.0: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + lhs.size() + ", " + rhs.size());
     final Set<Coordinate> meetingPoints = lhs.keySet()
         .intersect(rhs.keySet());
-    System.out.println("0.1: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + meetingPoints.size());
 
     return meetingPoints
         .map(c -> {
           final Array<Directions> lhsDirections = lhs.get(c).get();
           final Array<Directions> rhsDirections = rhs.get(c).get();
 
-          System.out.println("1: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + lhsDirections.size() + ", " + rhsDirections.size());
           return HashMap.ofEntries(
               lhsDirections
                   .toStream()
@@ -233,13 +230,10 @@ public class Grid {
                         endCoordinate,
                         t2._1.appendAll(reversedThatDirections));
                   })
-                  .peek(t2 -> System.out.println("2: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
                   .filter(cd -> cd._2.directionLimits.isValid())
-                  .peek(t2 -> System.out.println("3: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size()))
                   .groupBy(t2 -> t2._1)
                   .mapValues(v -> v.map(t2 -> t2._2))
-                  .mapValues(Array::ofAll)
-                  .peek(t2 -> System.out.println("4: time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", directions = " + t2._2.size())));
+                  .mapValues(Array::ofAll));
         })
         .foldLeft(
             HashMap.empty(),
