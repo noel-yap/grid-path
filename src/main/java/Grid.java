@@ -1,4 +1,3 @@
-import io.vavr.Function2;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import io.vavr.collection.Array;
@@ -22,12 +21,6 @@ public class Grid {
   private final int height;
   private final Set<Coordinate> obstacles;
 
-  private static final Map<Direction, Function2<Grid, Coordinate, Coordinate>> DIRECTION_NEXT_COORDINATE_MAP = HashMap.of(
-      Direction.UP, (g, c) -> Coordinate.of(c.x, (c.y + g.height - 1) % g.height),
-      Direction.DOWN, (g, c) -> Coordinate.of(c.x, (c.y + g.height + 1) % g.height),
-      Direction.LEFT, (g, c) -> Coordinate.of((c.x + g.width - 1) % g.width, c.y),
-      Direction.RIGHT, (g, c) -> Coordinate.of((c.x + g.width + 1) % g.width, c.y));
-
   private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.#########s");
 
   public Grid(
@@ -42,18 +35,18 @@ public class Grid {
   public String draw(final Coordinate start, final Coordinate destination) {
     final StringBuilder result = new StringBuilder();
 
-    if (width * height > 1 << 16) {
-      result.append("start = ").append(start).append("\n");
-      result.append("destination = ").append(destination).append("\n");
-    } else {
+    result.append("start = ").append(start).append("\n");
+    result.append("destination = ").append(destination).append("\n");
+
+    if (width * height < 1 << 16) {
       result.append("◯: Start\n");
       result.append("⬤: Destination\n");
       result.append("⬜: Available\n");
       result.append("⬛: Blocked\n");
       result.append("\n");
 
-      for (int x = 0; x < height; ++x) {
-        for (int y = 0; y < width; ++y) {
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
           final char c = x == start.x && y == start.y
               ? '◯'
               : x == destination.x && y == destination.y
@@ -94,8 +87,14 @@ public class Grid {
         });
   }
 
-  private Coordinate followDirectionFrom(final Coordinate from, final Direction direction) {
-    return DIRECTION_NEXT_COORDINATE_MAP.get(direction).get().apply(this, from);
+  @VisibleForTesting
+  Coordinate followDirectionFrom(final Coordinate from, final Direction direction) {
+    return switch (direction) {
+      case UP -> Coordinate.of(from.x, (from.y + height - 1) % height);
+      case DOWN -> Coordinate.of(from.x, (from.y + height + 1) % height);
+      case LEFT -> Coordinate.of((from.x + width - 1) % width, from.y);
+      case RIGHT -> Coordinate.of((from.x + width + 1) % width, from.y);
+    };
   }
 
   /**
@@ -177,13 +176,13 @@ public class Grid {
           final Legs nextFromDestination = currentFromDestination.nextPaths(this);
           System.out.println("1.1: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + nextFromDestination.legs.size() + ", " + nextFromDestination.priorEnds.size());
 
-          final Map<Coordinate, Array<Directions>> oddStepCountPaths = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
-          System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + oddStepCountPathPossible + ", size = " + oddStepCountPaths.size());
+          final Map<Coordinate, Array<Directions>> oddStepCountSolutions = oddStepCountPathsProvider.apply(currentFromSource, nextFromDestination);
+          System.out.println("2: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + oddStepCountPathPossible + ", size = " + oddStepCountSolutions.size());
 
-          final Map<Coordinate, Array<Directions>> evenStepCountPaths = evenStepCountPathsProvider.apply(nextFromSource, nextFromDestination);
-          System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + evenStepCountPathPossible + ", size = " + evenStepCountPaths.size());
+          final Map<Coordinate, Array<Directions>> evenStepCountSolutions = evenStepCountPathsProvider.apply(nextFromSource, nextFromDestination);
+          System.out.println("3: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", possible = " + evenStepCountPathPossible + ", size = " + evenStepCountSolutions.size());
 
-          final Map<Coordinate, Array<Directions>> solutions = oddStepCountPaths.merge(evenStepCountPaths);
+          final Map<Coordinate, Array<Directions>> solutions = oddStepCountSolutions.merge(evenStepCountSolutions);
           System.out.println("4: depth = " + depth + "; time = " + TIME_FORMAT.format((System.nanoTime() - startTime) * 1e-9) + ", size = " + solutions.size());
 
           if (!solutions.isEmpty() || nextFromSource.isEmpty() || nextFromDestination.isEmpty()) {

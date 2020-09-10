@@ -7,7 +7,6 @@ import java.util.Comparator;
 @EqualsAndHashCode
 @ToString
 public class Directions implements Comparable<Directions> {
-  @EqualsAndHashCode.Include
   private final List<Direction> directions; // in reverse for both cpu and memory performance
 
   public final DirectionLimits directionLimits;
@@ -34,6 +33,10 @@ public class Directions implements Comparable<Directions> {
 
   public Direction last() {
     return directions.head();
+  }
+
+  public Direction secondToLast() {
+    return directions.get(1);
   }
 
   public int size() {

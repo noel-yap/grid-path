@@ -18,10 +18,10 @@ public class MemoryExploratoryTest {
   public void exploreDataStructureMemorySizes() throws Exception {
     final var directions = new Directions(List.empty(), DirectionLimits.empty());
 
-    final var directionsArray = Array.of(directions);
-    final var directionsList = List.of(directions);
-    final var directionsSet = HashSet.of(directions);
-    final var directionsSortedSet = TreeSet.of(directions);
+    Array.fill(65536, directions);
+    List.fill(65536, directions);
+    HashSet.fill(65536, () -> directions);
+    TreeSet.fill(65536, () -> directions);
 
     dumpHeap();
   }

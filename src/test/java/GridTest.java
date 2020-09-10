@@ -15,6 +15,110 @@ import static org.assertj.vavr.api.VavrAssertions.assertThat;
 @ExtendWith(SoftAssertionsExtension.class)
 public class GridTest {
   @Test
+  @DisplayName("Should follow up.")
+  public void shouldFollowUp() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.UP);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(1, 0));
+  }
+
+  @Test
+  @DisplayName("Should wrap up.")
+  public void shouldWrapUp() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 0);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.UP);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(1, 2));
+  }
+
+  @Test
+  @DisplayName("Should follow down.")
+  public void shouldFollowDown() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.DOWN);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(1, 2));
+  }
+
+  @Test
+  @DisplayName("Should wrap down.")
+  public void shouldWrapDown() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 2);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.DOWN);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(1, 0));
+  }
+
+  @Test
+  @DisplayName("Should follow left.")
+  public void shouldFollowLeft() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.LEFT);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(0, 1));
+  }
+
+  @Test
+  @DisplayName("Should wrap left.")
+  public void shouldWrapLeft() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(0, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.LEFT);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(2, 1));
+  }
+
+  @Test
+  @DisplayName("Should follow right.")
+  public void shouldFollowRight() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(1, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.RIGHT);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(2, 1));
+  }
+
+  @Test
+  @DisplayName("Should wrap right.")
+  public void shouldWrapRight() {
+    final var grid = new Grid(3, 3, HashSet.empty());
+
+    final var from = Coordinate.of(2, 1);
+
+    final Coordinate to = grid.followDirectionFrom(from, Direction.RIGHT);
+
+    Assertions.assertThat(to)
+        .isEqualTo(Coordinate.of(0, 1));
+  }
+
+  @Test
   @DisplayName("Should meet legs.")
   public void shouldMeetLegs() {
     final var expected = HashMap.of(
@@ -68,7 +172,7 @@ public class GridTest {
 
     final var start = Coordinate.of(1, 0);
 
-    final var destination = grid.followDirectionFrom(Option.of(start), Direction.RIGHT);
+    final var destination = grid.followDirectionsFrom(Option.of(start), List.of(Direction.RIGHT, Direction.RIGHT));
 
     Assertions.assertThat(destination)
         .isEmpty();

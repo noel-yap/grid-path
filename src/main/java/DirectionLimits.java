@@ -50,33 +50,18 @@ public class DirectionLimits {
     };
   }
 
+  // TODO: See what effects returning an Array has
   public Stream<Direction> getAvailable() {
     return Stream.of(Direction.values())
-            .filter(d -> get(d) > 0);
-  }
-
-  public DirectionLimits decrementUpLimit() {
-    return new DirectionLimits(upLimit - 1, downLimit, leftLimit, rightLimit);
-  }
-
-  public DirectionLimits decrementDownLimit() {
-    return new DirectionLimits(upLimit, downLimit - 1, leftLimit, rightLimit);
-  }
-
-  public DirectionLimits decrementLeftLimit() {
-    return new DirectionLimits(upLimit, downLimit, leftLimit - 1, rightLimit);
-  }
-
-  public DirectionLimits decrementRightLimit() {
-    return new DirectionLimits(upLimit, downLimit, leftLimit, rightLimit - 1);
+        .filter(d -> get(d) > 0);
   }
 
   public DirectionLimits decrementDirectionLimit(final Direction direction) {
     return switch (direction) {
-      case UP -> decrementUpLimit();
-      case DOWN -> decrementDownLimit();
-      case LEFT -> decrementLeftLimit();
-      case RIGHT -> decrementRightLimit();
+      case UP -> new DirectionLimits(upLimit - 1, downLimit, leftLimit, rightLimit);
+      case DOWN -> new DirectionLimits(upLimit, downLimit - 1, leftLimit, rightLimit);
+      case LEFT -> new DirectionLimits(upLimit, downLimit, leftLimit - 1, rightLimit);
+      case RIGHT -> new DirectionLimits(upLimit, downLimit, leftLimit, rightLimit - 1);
     };
   }
 

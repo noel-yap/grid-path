@@ -1,4 +1,3 @@
-import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
@@ -12,6 +11,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GridExploratoryTest {
 //  public static int HEIGHT = 5;
+//  public static int HEIGHT = 17;
+//  public static int HEIGHT = 269;
+//  public static int HEIGHT = 4099;
   public static int HEIGHT = 16451;
   public static int WIDTH = HEIGHT + 2;
 
@@ -29,7 +31,9 @@ public class GridExploratoryTest {
   @DisplayName("Should find directions to destination.")
   public void shouldFindDirectionsToDestination() {
     final Coordinate start = randomCoordinate();
-    final Coordinate destination = Coordinate.of((start.x + WIDTH / 2) % WIDTH, (start.y + HEIGHT / 2) % HEIGHT);
+    final Coordinate destination = Coordinate.of(
+        (start.x + WIDTH / 2 + horizontalPrng.produce(3) - 1) % WIDTH,
+        (start.y + HEIGHT / 2 + verticalPrng.produce(3) - 1) % HEIGHT);
 
     assertThat(start)
         .isNotEqualTo(destination);
@@ -83,8 +87,8 @@ public class GridExploratoryTest {
   }
 
   private Coordinate randomCoordinate(final int width, final int height) {
-    final int x = horizontalPrng.produce(height);
-    final int y = verticalPrng.produce(width);
+    final int x = horizontalPrng.produce(width);
+    final int y = verticalPrng.produce(height);
 
     return Coordinate.of(x, y);
   }
