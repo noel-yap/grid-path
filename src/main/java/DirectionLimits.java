@@ -1,5 +1,5 @@
+import io.vavr.collection.Array;
 import io.vavr.collection.List;
-import io.vavr.collection.Stream;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -50,9 +50,8 @@ public class DirectionLimits {
     };
   }
 
-  // TODO: See what effects returning an Array has
-  public Stream<Direction> getAvailable() {
-    return Stream.of(Direction.values())
+  public Array<Direction> getAvailable() {
+    return Array.of(Direction.values())
         .filter(d -> get(d) > 0);
   }
 

@@ -219,7 +219,7 @@ public class Grid {
 
           return HashMap.ofEntries(
               lhsDirections
-                  .toStream()
+                  .toStream() // TODO: See what effect removing this has.
                   .crossProduct(rhsDirections)
                   .map(t2 -> {
                     final Directions reversedThatDirections = t2._2.reverse();
