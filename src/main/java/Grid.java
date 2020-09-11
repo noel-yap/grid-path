@@ -207,8 +207,6 @@ public class Grid {
    */
   @VisibleForTesting
   Map<Coordinate, Array<Directions>> meet(final Map<Coordinate, Array<Directions>> lhs, final Map<Coordinate, Array<Directions>> rhs) {
-    final long startTime = System.nanoTime();
-
     final Set<Coordinate> meetingPoints = lhs.keySet()
         .intersect(rhs.keySet());
 
@@ -219,7 +217,6 @@ public class Grid {
 
           return HashMap.ofEntries(
               lhsDirections
-                  .toStream() // TODO: See what effect removing this has.
                   .crossProduct(rhsDirections)
                   .map(t2 -> {
                     final Directions reversedThatDirections = t2._2.reverse();

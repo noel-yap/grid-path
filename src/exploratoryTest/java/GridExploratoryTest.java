@@ -16,7 +16,6 @@ public class GridExploratoryTest {
 //  public static int HEIGHT = 269;
 //  public static int HEIGHT = 4099;
   public static int HEIGHT = 16451;
-//  public static int HEIGHT = 65579;
   public static int WIDTH = HEIGHT + 2;
 
   final RandomInt horizontalPrng = new RandomInt(WIDTH);
@@ -48,8 +47,12 @@ public class GridExploratoryTest {
 
     System.out.println("direction limits = " + directionLimits);
 
+    final int obstacleCount = (int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT);
+
+    System.out.println("obstacleCount = " + obstacleCount);
+
     final Set<Coordinate> obstacles = HashSet
-        .fill((int) CombinatoricsUtils.binomialCoefficient(WIDTH, HEIGHT), this::randomCoordinate)
+        .fill(obstacleCount, this::randomCoordinate)
         .filterNot(c -> c.equals(start) || c.equals(destination));
     final var grid = new Grid(
         WIDTH,
